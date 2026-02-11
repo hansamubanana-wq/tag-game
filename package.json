@@ -1,0 +1,16 @@
+{
+  "name": "neon-tag-game",
+  "version": "1.0.0",
+  "description": "Multiplayer tag game with neon effects",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.6.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

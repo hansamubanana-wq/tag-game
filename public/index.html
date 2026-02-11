@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>ネオン鬼ごっこ</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: none;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+      overflow: hidden;
+      color: #fff;
+    }
+
+    #loginScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 1000;
+    }
+
+    #loginScreen.hidden {
+      display: none;
+    }
+
+    #loginScreen h1 {
+      font-size: 3em;
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 60px #00ffff;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff; }
+      50% { text-shadow: 0 0 30px #00ffff, 0 0 60px #00ffff, 0 0 90px #00ffff; }
+    }
+
+    #loginScreen input {
+      padding: 15px 30px;
+      font-size: 1.2em;
+      border: 2px solid #00ffff;
+      background: rgba(0, 255, 255, 0.1);
+      color: #fff;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      outline: none;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+    }
+
+    #loginScreen button {
+      padding: 15px 50px;
+      font-size: 1.2em;
+      border: none;
+      background: linear-gradient(135deg, #00ffff 0%, #0080ff 100%);
+      color: #000;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+      transition: all 0.3s;
+    }
+
+    #loginScreen button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 40px rgba(0, 255, 255, 0.8);
+    }
+
+    #gameContainer {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #gameCanvas {
+      border: 2px solid #00ffff;
+      box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    #hud {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .hud-panel {
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px 25px;
+      border-radius: 10px;
+      border: 2px solid #00ffff;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+    }
+
+    .hud-panel h3 {
+      font-size: 0.9em;
+      color: #00ffff;
+      margin-bottom: 5px;
+    }
+
+    .hud-panel p {
+      font-size: 1.5em;
+      font-weight: bold;
+      text-shadow: 0 0 10px #00ffff;
+    }
+
+    #joystickArea {
+      position: fixed;
+      bottom: 50px;
+      right: 50px;
+      width: 150px;
+      height: 150px;
+      background: radial-gradient(circle, rgba(0, 255, 255, 0.2) 0%, transparent 70%);
+      border-radius: 50%;
+      border: 2px solid rgba(0, 255, 255, 0.5);
+      display: none;
+      z-index: 50;
+    }
+
+    #joystick {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      background: radial-gradient(circle, #00ffff 0%, #0080ff 100%);
+      border-radius: 50%;
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    @media (max-width: 768px) {
+      #joystickArea {
+        display: block;
+      }
+
+      #hud {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .hud-panel {
+        padding: 10px 15px;
+      }
+
+      .hud-panel p {
+        font-size: 1.2em;
+      }
+    }
+
+    #playerList {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 15px;
+      border-radius: 10px;
+      border: 2px solid #00ffff;
+      min-width: 200px;
+      max-height: 300px;
+      overflow-y: auto;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+    }
+
+    #playerList h3 {
+      color: #00ffff;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .player-item {
+      padding: 8px;
+      margin: 5px 0;
+      background: rgba(0, 255, 255, 0.1);
+      border-radius: 5px;
+      font-size: 0.9em;
+    }
+
+    .player-item.is-it {
+      background: rgba(255, 0, 0, 0.3);
+      border: 1px solid #ff0000;
+      box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+    }
+
+    @media (max-width: 768px) {
+      #playerList {
+        top: auto;
+        bottom: 220px;
+        right: 10px;
+        max-height: 200px;
+        min-width: 150px;
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="loginScreen">
+    <h1>⚡ ネオン鬼ごっこ ⚡</h1>
+    <input type="text" id="nameInput" placeholder="名前を入力" maxlength="12">
+    <button id="joinButton">ゲーム開始</button>
+  </div>
+
+  <div id="gameContainer" style="display: none;">
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    
+    <div id="hud">
+      <div class="hud-panel">
+        <h3>あなたの状態</h3>
+        <p id="statusText">逃走中</p>
+      </div>
+      <div class="hud-panel">
+        <h3>時間</h3>
+        <p id="timeText">0.0秒</p>
+      </div>
+      <div class="hud-panel">
+        <h3>スコア</h3>
+        <p id="scoreText">0点</p>
+      </div>
+    </div>
+
+    <div id="playerList">
+      <h3>プレイヤー</h3>
+      <div id="playerListContent"></div>
+    </div>
+
+    <div id="joystickArea">
+      <div id="joystick"></div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const socket = io();
+
+    let myId = null;
+    let players = [];
+    let keys = {};
+    let joystickActive = false;
+    let joystickDir = { x: 0, y: 0 };
+
+    // パーティクルシステム
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 3;
+        this.vy = (Math.random() - 0.5) * 3;
+        this.life = 1;
+        this.color = color;
+        this.size = Math.random() * 3 + 2;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= 0.02;
+        this.vy += 0.1;
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = this.color;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    let particles = [];
+
+    // ログイン
+    document.getElementById('joinButton').addEventListener('click', () => {
+      const name = document.getElementById('nameInput').value.trim() || 'Player';
+      socket.emit('join', name);
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('gameContainer').style.display = 'flex';
+    });
+
+    document.getElementById('nameInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('joinButton').click();
+      }
+    });
+
+    // キーボード操作
+    document.addEventListener('keydown', (e) => {
+      keys[e.key] = true;
+      updateMovement();
+    });
+
+    document.addEventListener('keyup', (e) => {
+      keys[e.key] = false;
+      updateMovement();
+    });
+
+    function updateMovement() {
+      let x = 0, y = 0;
+      
+      if (keys['ArrowLeft'] || keys['a'] || keys['A']) x -= 1;
+      if (keys['ArrowRight'] || keys['d'] || keys['D']) x += 1;
+      if (keys['ArrowUp'] || keys['w'] || keys['W']) y -= 1;
+      if (keys['ArrowDown'] || keys['s'] || keys['S']) y += 1;
+
+      if (x !== 0 || y !== 0) {
+        const length = Math.sqrt(x * x + y * y);
+        x /= length;
+        y /= length;
+      }
+
+      socket.emit('move', { x, y });
+    }
+
+    // ジョイスティック
+    const joystickArea = document.getElementById('joystickArea');
+    const joystick = document.getElementById('joystick');
+
+    joystickArea.addEventListener('touchstart', handleJoystickStart);
+    joystickArea.addEventListener('touchmove', handleJoystickMove);
+    joystickArea.addEventListener('touchend', handleJoystickEnd);
+
+    function handleJoystickStart(e) {
+      e.preventDefault();
+      joystickActive = true;
+    }
+
+    function handleJoystickMove(e) {
+      e.preventDefault();
+      if (!joystickActive) return;
+
+      const rect = joystickArea.getBoundingClientRect();
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      const touch = e.touches[0];
+      const x = touch.clientX - rect.left - centerX;
+      const y = touch.clientY - rect.top - centerY;
+
+      const distance = Math.sqrt(x * x + y * y);
+      const maxDistance = rect.width / 2 - 30;
+
+      if (distance > 0) {
+        let dirX = x / distance;
+        let dirY = y / distance;
+        
+        const clampedDistance = Math.min(distance, maxDistance);
+        joystick.style.transform = `translate(${dirX * clampedDistance}px, ${dirY * clampedDistance}px)`;
+
+        joystickDir.x = dirX;
+        joystickDir.y = dirY;
+        socket.emit('move', joystickDir);
+      }
+    }
+
+    function handleJoystickEnd(e) {
+      e.preventDefault();
+      joystickActive = false;
+      joystick.style.transform = 'translate(0, 0)';
+      joystickDir = { x: 0, y: 0 };
+      socket.emit('move', joystickDir);
+    }
+
+    // Socket.io イベント
+    socket.on('init', (data) => {
+      myId = data.id;
+      players = data.players;
+    });
+
+    socket.on('playerJoined', (player) => {
+      players.push(player);
+    });
+
+    socket.on('playerLeft', (id) => {
+      players = players.filter(p => p.id !== id);
+    });
+
+    socket.on('update', (updatedPlayers) => {
+      players = updatedPlayers;
+    });
+
+    socket.on('tag', (data) => {
+      // タグエフェクト
+      const newIt = players.find(p => p.id === data.newIt);
+      if (newIt) {
+        for (let i = 0; i < 30; i++) {
+          particles.push(new Particle(newIt.x, newIt.y, '#ff0000'));
+        }
+      }
+    });
+
+    socket.on('newIt', (newItId) => {
+      console.log('New it:', newItId);
+    });
+
+    // 描画ループ
+    function draw() {
+      // 背景
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // グリッド
+      ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < canvas.width; i += 40) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, canvas.height);
+        ctx.stroke();
+      }
+      for (let i = 0; i < canvas.height; i += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(canvas.width, i);
+        ctx.stroke();
+      }
+
+      // パーティクル
+      particles = particles.filter(p => p.life > 0);
+      particles.forEach(p => {
+        p.update();
+        p.draw(ctx);
+      });
+
+      // プレイヤー
+      players.forEach(player => {
+        const color = player.isIt ? '#ff0000' : '#00ffff';
+        const glowSize = player.isIt ? 40 : 30;
+
+        // パーティクル生成（移動中）
+        if ((player.vx !== 0 || player.vy !== 0) && Math.random() > 0.7) {
+          particles.push(new Particle(player.x, player.y, color));
+        }
+
+        // 影
+        ctx.save();
+        ctx.shadowBlur = glowSize;
+        ctx.shadowColor = color;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, 20, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // プレイヤー本体
+        const gradient = ctx.createRadialGradient(player.x, player.y, 5, player.x, player.y, 20);
+        gradient.addColorStop(0, color);
+        gradient.addColorStop(1, player.isIt ? '#aa0000' : '#005555');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, 20, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 名前
+        ctx.save();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#000';
+        ctx.fillText(player.name, player.x, player.y - 30);
+        ctx.restore();
+
+        // 鬼マーク
+        if (player.isIt) {
+          ctx.save();
+          ctx.fillStyle = '#ff0000';
+          ctx.font = 'bold 20px Arial';
+          ctx.textAlign = 'center';
+          ctx.shadowBlur = 15;
+          ctx.shadowColor = '#ff0000';
+          ctx.fillText('👹', player.x, player.y + 40);
+          ctx.restore();
+        }
+      });
+
+      // HUD更新
+      const me = players.find(p => p.id === myId);
+      if (me) {
+        document.getElementById('statusText').textContent = me.isIt ? '👹 鬼' : '🏃 逃走中';
+        document.getElementById('statusText').style.color = me.isIt ? '#ff0000' : '#00ffff';
+        document.getElementById('timeText').textContent = me.survivalTime.toFixed(1) + '秒';
+        document.getElementById('scoreText').textContent = me.score + '点';
+      }
+
+      // プレイヤーリスト更新
+      const listContent = document.getElementById('playerListContent');
+      listContent.innerHTML = '';
+      players
+        .sort((a, b) => b.score - a.score)
+        .forEach(player => {
+          const div = document.createElement('div');
+          div.className = 'player-item' + (player.isIt ? ' is-it' : '');
+          div.textContent = `${player.isIt ? '👹 ' : ''}${player.name}: ${player.score}点`;
+          listContent.appendChild(div);
+        });
+
+      requestAnimationFrame(draw);
+    }
+
+    draw();
+  </script>
+</body>
+</html>
