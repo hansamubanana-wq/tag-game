@@ -62,39 +62,66 @@
       box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
     }
 
-    #iconPreview {
-      width: 100px;
-      height: 100px;
+    #emojiSelector {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      max-width: 400px;
+      justify-content: center;
+    }
+
+    .emoji-option {
+      width: 60px;
+      height: 60px;
+      font-size: 2.5em;
+      border: 3px solid #666;
       border-radius: 50%;
-      border: 3px solid #ff0000;
-      margin-bottom: 15px;
-      object-fit: cover;
-      background: rgba(255, 0, 0, 0.1);
+      cursor: pointer;
+      transition: all 0.3s;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 3em;
+      background: rgba(255, 0, 0, 0.1);
     }
 
-    #iconInput {
-      display: none;
+    .emoji-option:hover {
+      transform: scale(1.1);
+      border-color: #ffaa00;
     }
 
-    .upload-btn {
-      padding: 10px 25px;
-      font-size: 1em;
-      background: rgba(255, 170, 0, 0.3);
-      border: 2px solid #ffaa00;
-      color: #ffaa00;
-      border-radius: 8px;
+    .emoji-option.selected {
+      border-color: #00ffff;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+      transform: scale(1.15);
+    }
+
+    #colorSelector {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      max-width: 400px;
+      justify-content: center;
+    }
+
+    .color-option {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #666;
+      border-radius: 50%;
       cursor: pointer;
-      margin-bottom: 15px;
       transition: all 0.3s;
     }
 
-    .upload-btn:hover {
-      background: rgba(255, 170, 0, 0.5);
-      box-shadow: 0 0 20px rgba(255, 170, 0, 0.5);
+    .color-option:hover {
+      transform: scale(1.1);
+    }
+
+    .color-option.selected {
+      border-color: #fff;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+      transform: scale(1.2);
     }
 
     button {
@@ -153,17 +180,8 @@
       gap: 12px;
     }
 
-    .lobby-player-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      border: 2px solid #ff0000;
-      object-fit: cover;
-      background: rgba(255, 0, 0, 0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5em;
+    .lobby-player-emoji {
+      font-size: 2em;
     }
 
     #gameContainer {
@@ -372,16 +390,26 @@
       #roleText {
         font-size: 1.3em;
       }
+
+      #emojiSelector {
+        max-width: 300px;
+      }
+
+      .emoji-option {
+        width: 50px;
+        height: 50px;
+        font-size: 2em;
+      }
     }
   </style>
 </head>
 <body>
   <div id="loginScreen">
     <h1>🏫 加藤先生から逃げろ！</h1>
-    <p style="color: #ffaa00; font-size: 1.1em;">オンライン対戦版</p>
-    <div id="iconPreview">👤</div>
-    <label for="iconInput" class="upload-btn">📷 アイコン選択</label>
-    <input type="file" id="iconInput" accept="image/*">
+    <p style="color: #ffaa00; font-size: 1.1em; margin-bottom: 20px;">アイコンを選択</p>
+    <div id="emojiSelector"></div>
+    <p style="color: #ffaa00; font-size: 0.9em; margin-bottom: 10px;">カラーを選択</p>
+    <div id="colorSelector"></div>
     <input type="text" id="nameInput" placeholder="名前を入力" maxlength="12">
     <button id="joinButton">ゲーム参加</button>
   </div>
@@ -448,7 +476,6 @@
     canvas.width = viewportWidth;
     canvas.height = viewportHeight;
     
-    // ミニマップのサイズを明示的に設定
     const minimapWidth = 240;
     const minimapHeight = 160;
     minimapCanvas.width = minimapWidth;
@@ -466,37 +493,49 @@
     let joystickDir = { x: 0, y: 0 };
     let cameraX = 0;
     let cameraY = 0;
-    let playerIconData = null;
-    let playerIcons = new Map(); // プレイヤーアイコンのImage
+
+    // 絵文字とカラーの選択
+    const emojis = ['😀', '😎', '🤓', '😇', '🤔', '😴', '🥳', '🤩', '😈', '👽', '🤖', '🐱', '🐶', '🐼', '🦊', '🐯'];
+    const colors = ['#00ffff', '#ff00ff', '#ffff00', '#00ff00', '#ff8800', '#0088ff', '#ff0088', '#88ff00'];
+    
+    let selectedEmoji = '😀';
+    let selectedColor = '#00ffff';
+
+    // 絵文字セレクター生成
+    const emojiSelector = document.getElementById('emojiSelector');
+    emojis.forEach(emoji => {
+      const div = document.createElement('div');
+      div.className = 'emoji-option';
+      if (emoji === selectedEmoji) div.classList.add('selected');
+      div.textContent = emoji;
+      div.onclick = () => {
+        document.querySelectorAll('.emoji-option').forEach(el => el.classList.remove('selected'));
+        div.classList.add('selected');
+        selectedEmoji = emoji;
+      };
+      emojiSelector.appendChild(div);
+    });
+
+    // カラーセレクター生成
+    const colorSelector = document.getElementById('colorSelector');
+    colors.forEach(color => {
+      const div = document.createElement('div');
+      div.className = 'color-option';
+      if (color === selectedColor) div.classList.add('selected');
+      div.style.background = color;
+      div.onclick = () => {
+        document.querySelectorAll('.color-option').forEach(el => el.classList.remove('selected'));
+        div.classList.add('selected');
+        selectedColor = color;
+      };
+      colorSelector.appendChild(div);
+    });
 
     window.addEventListener('resize', () => {
       viewportWidth = window.innerWidth;
       viewportHeight = window.innerHeight;
       canvas.width = viewportWidth;
       canvas.height = viewportHeight;
-    });
-
-    // アイコンアップロード
-    const iconInput = document.getElementById('iconInput');
-    const iconPreview = document.getElementById('iconPreview');
-
-    iconInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          playerIconData = event.target.result;
-          iconPreview.innerHTML = '';
-          const img = document.createElement('img');
-          img.src = playerIconData;
-          img.style.width = '100%';
-          img.style.height = '100%';
-          img.style.objectFit = 'cover';
-          img.style.borderRadius = '50%';
-          iconPreview.appendChild(img);
-        };
-        reader.readAsDataURL(file);
-      }
     });
 
     class Particle {
@@ -534,7 +573,7 @@
 
     document.getElementById('joinButton').addEventListener('click', () => {
       const name = document.getElementById('nameInput').value.trim() || 'Player';
-      socket.emit('join', { name: name, icon: playerIconData });
+      socket.emit('join', { name: name, emoji: selectedEmoji, color: selectedColor });
       document.getElementById('loginScreen').classList.add('hidden');
       document.getElementById('lobbyScreen').classList.remove('hidden');
     });
@@ -545,23 +584,9 @@
       }
     });
 
-    // アイコン画像の読み込み
-    function loadPlayerIcon(player) {
-      if (player.icon && !playerIcons.has(player.id)) {
-        const img = new Image();
-        img.onload = () => {
-          playerIcons.set(player.id, img);
-        };
-        img.src = player.icon;
-      }
-    }
-
     socket.on('lobbyUpdate', (data) => {
       players = data.players;
       isHost = myId === data.hostId;
-
-      // アイコンを読み込み
-      players.forEach(player => loadPlayerIcon(player));
 
       const listDiv = document.getElementById('lobbyPlayerList');
       listDiv.innerHTML = '';
@@ -573,24 +598,15 @@
         const infoDiv = document.createElement('div');
         infoDiv.className = 'lobby-player-info';
         
-        const iconDiv = document.createElement('div');
-        iconDiv.className = 'lobby-player-icon';
-        if (player.icon) {
-          const img = document.createElement('img');
-          img.src = player.icon;
-          img.style.width = '100%';
-          img.style.height = '100%';
-          img.style.objectFit = 'cover';
-          img.style.borderRadius = '50%';
-          iconDiv.appendChild(img);
-        } else {
-          iconDiv.textContent = '👤';
-        }
+        const emojiSpan = document.createElement('span');
+        emojiSpan.className = 'lobby-player-emoji';
+        emojiSpan.textContent = player.emoji;
         
         const nameSpan = document.createElement('span');
         nameSpan.textContent = player.isTeacher ? `${player.name} (鬼)` : player.name;
+        nameSpan.style.color = player.color;
         
-        infoDiv.appendChild(iconDiv);
+        infoDiv.appendChild(emojiSpan);
         infoDiv.appendChild(nameSpan);
         div.appendChild(infoDiv);
         
@@ -624,10 +640,6 @@
       players = data.players;
       tasks = data.tasks;
       gameStarted = true;
-      
-      // アイコンを読み込み
-      players.forEach(player => loadPlayerIcon(player));
-      
       console.log('Game started, players:', players.length, 'tasks:', tasks.length);
     });
 
@@ -669,24 +681,15 @@
         const infoDiv = document.createElement('div');
         infoDiv.className = 'lobby-player-info';
         
-        const iconDiv = document.createElement('div');
-        iconDiv.className = 'lobby-player-icon';
-        if (player.icon) {
-          const img = document.createElement('img');
-          img.src = player.icon;
-          img.style.width = '100%';
-          img.style.height = '100%';
-          img.style.objectFit = 'cover';
-          img.style.borderRadius = '50%';
-          iconDiv.appendChild(img);
-        } else {
-          iconDiv.textContent = '👤';
-        }
+        const emojiSpan = document.createElement('span');
+        emojiSpan.className = 'lobby-player-emoji';
+        emojiSpan.textContent = player.emoji;
         
         const nameSpan = document.createElement('span');
         nameSpan.textContent = player.name;
+        nameSpan.style.color = player.color;
         
-        infoDiv.appendChild(iconDiv);
+        infoDiv.appendChild(emojiSpan);
         infoDiv.appendChild(nameSpan);
         div.appendChild(infoDiv);
         
@@ -790,31 +793,19 @@
       isHost = data.isHost;
       WORLD_WIDTH = data.worldWidth;
       WORLD_HEIGHT = data.worldHeight;
-      
-      // アイコンを読み込み
-      players.forEach(player => loadPlayerIcon(player));
     });
 
     socket.on('playerJoined', (player) => {
       if (!gameStarted) {
         players.push(player);
-        loadPlayerIcon(player);
       }
     });
 
     socket.on('playerLeft', (id) => {
       players = players.filter(p => p.id !== id);
-      playerIcons.delete(id);
     });
 
     socket.on('update', (data) => {
-      // 新しいプレイヤーのアイコンを読み込み
-      data.players.forEach(player => {
-        if (!players.find(p => p.id === player.id)) {
-          loadPlayerIcon(player);
-        }
-      });
-      
       players = data.players;
       tasks = data.tasks;
       exitOpen = data.exitOpen;
@@ -871,11 +862,9 @@
       const scaleX = minimapWidth / WORLD_WIDTH;
       const scaleY = minimapHeight / WORLD_HEIGHT;
 
-      // 背景
       minimapCtx.fillStyle = 'rgba(10, 10, 10, 0.9)';
       minimapCtx.fillRect(0, 0, minimapWidth, minimapHeight);
 
-      // 障害物（薄く）
       minimapCtx.fillStyle = 'rgba(50, 50, 50, 0.5)';
       obstacles.forEach(obs => {
         const x = obs.x * scaleX;
@@ -885,7 +874,6 @@
         minimapCtx.fillRect(x, y, w, h);
       });
 
-      // タスク
       tasks.forEach(task => {
         const x = task.x * scaleX;
         const y = task.y * scaleY;
@@ -898,7 +886,6 @@
         minimapCtx.shadowBlur = 0;
       });
 
-      // 出口
       if (exitOpen) {
         const exitX = (WORLD_WIDTH / 2) * scaleX;
         const exitY = 200 * scaleY;
@@ -911,13 +898,12 @@
         minimapCtx.shadowBlur = 0;
       }
 
-      // プレイヤー
       players.forEach(player => {
         if (player.isCaptured && !player.isTeacher) return;
 
         const x = player.x * scaleX;
         const y = player.y * scaleY;
-        const color = player.isTeacher ? '#ff0000' : '#00ffff';
+        const color = player.isTeacher ? '#ff0000' : player.color;
         const size = player.isTeacher ? 5 : 4;
 
         minimapCtx.fillStyle = color;
@@ -929,7 +915,6 @@
         minimapCtx.shadowBlur = 0;
       });
 
-      // 視野範囲
       const me = players.find(p => p.id === myId);
       if (me) {
         const viewWidth = (viewportWidth / ZOOM_FACTOR) * scaleX;
@@ -1112,7 +1097,7 @@
       players.forEach(player => {
         if (player.isCaptured && !player.isTeacher) return;
 
-        const color = player.isTeacher ? '#ff0000' : '#00ffff';
+        const color = player.isTeacher ? '#ff0000' : player.color;
         const size = player.isTeacher ? 35 : 30;
         
         if ((player.vx !== 0 || player.vy !== 0) && Math.random() > 0.65) {
@@ -1129,39 +1114,27 @@
         ctx.fill();
         ctx.restore();
 
-        // プレイヤーアイコン（画像）
-        const iconImg = playerIcons.get(player.id);
-        if (iconImg) {
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(player.x, player.y, size, 0, Math.PI * 2);
-          ctx.closePath();
-          ctx.clip();
-          ctx.drawImage(iconImg, player.x - size, player.y - size, size * 2, size * 2);
-          ctx.restore();
-          
-          // 縁取り
-          ctx.strokeStyle = color;
-          ctx.lineWidth = 3;
-          ctx.shadowBlur = 15;
-          ctx.shadowColor = color;
-          ctx.beginPath();
-          ctx.arc(player.x, player.y, size, 0, Math.PI * 2);
-          ctx.stroke();
-        } else {
-          // デフォルト表示
-          const gradient = ctx.createRadialGradient(player.x, player.y, 5, player.x, player.y, size);
-          gradient.addColorStop(0, '#ffffff');
-          gradient.addColorStop(0.4, color);
-          gradient.addColorStop(1, player.isTeacher ? '#880000' : '#004444');
-          ctx.fillStyle = gradient;
-          ctx.beginPath();
-          ctx.arc(player.x, player.y, size, 0, Math.PI * 2);
-          ctx.fill();
-        }
+        // グラデーション円
+        const gradient = ctx.createRadialGradient(player.x, player.y, 5, player.x, player.y, size);
+        gradient.addColorStop(0, '#ffffff');
+        gradient.addColorStop(0.4, color);
+        gradient.addColorStop(1, player.isTeacher ? '#880000' : '#004444');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, size, 0, Math.PI * 2);
+        ctx.fill();
 
+        // 絵文字
         ctx.save();
-        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 35px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(player.emoji, player.x, player.y);
+        ctx.restore();
+
+        // 名前
+        ctx.save();
+        ctx.fillStyle = player.color;
         ctx.font = 'bold 18px Arial';
         ctx.textAlign = 'center';
         ctx.shadowBlur = 18;
@@ -1188,7 +1161,7 @@
         const roleIcon = me.isTeacher ? '👹' : (me.isCaptured ? '👻' : '🏃');
         const roleText = me.isTeacher ? '鬼' : (me.isCaptured ? '観戦中' : '生徒');
         document.getElementById('roleText').textContent = `${roleIcon} ${roleText}`;
-        document.getElementById('roleText').style.color = me.isTeacher ? '#ff0000' : '#00ffff';
+        document.getElementById('roleText').style.color = me.isTeacher ? '#ff0000' : me.color;
         document.getElementById('statsText').textContent = `スコア: ${me.score}点`;
         
         const completedTasks = tasks.filter(t => t.completed).length;
@@ -1205,7 +1178,7 @@
           if (player.isTeacher) div.classList.add('teacher');
           if (player.isCaptured && !player.isTeacher) div.classList.add('captured');
           
-          let icon = player.isTeacher ? '👹' : '🏃';
+          let icon = player.emoji;
           if (player.isCaptured && !player.isTeacher) icon = '👻';
           
           div.textContent = `${icon} ${player.name}: ${player.score}点`;

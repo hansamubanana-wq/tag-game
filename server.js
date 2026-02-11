@@ -106,7 +106,8 @@ io.on('connection', (socket) => {
     const player = {
       id: socket.id,
       name: data.name || 'Player',
-      icon: data.icon || null, // Base64画像データ
+      emoji: data.emoji || '😀',
+      color: data.color || '#00ffff',
       originalName: data.name || 'Player',
       x: spawn.x,
       y: spawn.y,
