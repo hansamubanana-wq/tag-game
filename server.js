@@ -56,14 +56,11 @@ function generateTasks() {
 }
 
 const obstacles = [
-  // 上部エリア
   { x: 700, y: 450, width: 250, height: 40 },
   { x: 2650, y: 450, width: 250, height: 40 },
   { x: 1600, y: 350, width: 400, height: 40 },
   { x: 500, y: 700, width: 40, height: 200 },
   { x: 3060, y: 700, width: 40, height: 200 },
-  
-  // 中央エリア
   { x: 1200, y: 1000, width: 300, height: 40 },
   { x: 2100, y: 1000, width: 300, height: 40 },
   { x: 700, y: 1100, width: 40, height: 250 },
@@ -71,16 +68,12 @@ const obstacles = [
   { x: 1650, y: 1150, width: 300, height: 40 },
   { x: 1000, y: 1400, width: 200, height: 40 },
   { x: 2400, y: 1400, width: 200, height: 40 },
-  
-  // 下部エリア
   { x: 600, y: 1700, width: 250, height: 40 },
   { x: 2750, y: 1700, width: 250, height: 40 },
   { x: 1650, y: 1800, width: 300, height: 40 },
   { x: 800, y: 1950, width: 40, height: 300 },
   { x: 2760, y: 1950, width: 40, height: 300 },
   { x: 1400, y: 2100, width: 800, height: 40 },
-  
-  // 追加の障害物（複雑さを増す）
   { x: 400, y: 1000, width: 150, height: 40 },
   { x: 3050, y: 1000, width: 150, height: 40 },
   { x: 1200, y: 500, width: 40, height: 150 },
@@ -108,12 +101,13 @@ function getTeacherSpawn() {
 io.on('connection', (socket) => {
   console.log('Player connected:', socket.id);
 
-  socket.on('join', (name) => {
+  socket.on('join', (data) => {
     const spawn = getStudentSpawn();
     const player = {
       id: socket.id,
-      name: name || 'Player',
-      originalName: name || 'Player',
+      name: data.name || 'Player',
+      icon: data.icon || null, // Base64画像データ
+      originalName: data.name || 'Player',
       x: spawn.x,
       y: spawn.y,
       vx: 0,

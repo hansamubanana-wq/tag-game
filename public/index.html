@@ -49,7 +49,7 @@
       50% { text-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000, 0 0 90px #ff0000; }
     }
 
-    input {
+    input[type="text"] {
       padding: 15px 30px;
       font-size: 1.2em;
       border: 2px solid #ff0000;
@@ -60,6 +60,41 @@
       outline: none;
       text-align: center;
       box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+    }
+
+    #iconPreview {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 3px solid #ff0000;
+      margin-bottom: 15px;
+      object-fit: cover;
+      background: rgba(255, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3em;
+    }
+
+    #iconInput {
+      display: none;
+    }
+
+    .upload-btn {
+      padding: 10px 25px;
+      font-size: 1em;
+      background: rgba(255, 170, 0, 0.3);
+      border: 2px solid #ffaa00;
+      color: #ffaa00;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 15px;
+      transition: all 0.3s;
+    }
+
+    .upload-btn:hover {
+      background: rgba(255, 170, 0, 0.5);
+      box-shadow: 0 0 20px rgba(255, 170, 0, 0.5);
     }
 
     button {
@@ -93,6 +128,8 @@
       border: 2px solid #ff0000;
       margin: 20px 0;
       min-width: 400px;
+      max-height: 400px;
+      overflow-y: auto;
     }
 
     .lobby-player {
@@ -108,6 +145,25 @@
     .lobby-player.teacher {
       background: rgba(255, 0, 0, 0.3);
       border: 2px solid #ff0000;
+    }
+
+    .lobby-player-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .lobby-player-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid #ff0000;
+      object-fit: cover;
+      background: rgba(255, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5em;
     }
 
     #gameContainer {
@@ -323,6 +379,9 @@
   <div id="loginScreen">
     <h1>🏫 加藤先生から逃げろ！</h1>
     <p style="color: #ffaa00; font-size: 1.1em;">オンライン対戦版</p>
+    <div id="iconPreview">👤</div>
+    <label for="iconInput" class="upload-btn">📷 アイコン選択</label>
+    <input type="file" id="iconInput" accept="image/*">
     <input type="text" id="nameInput" placeholder="名前を入力" maxlength="12">
     <button id="joinButton">ゲーム参加</button>
   </div>
@@ -388,8 +447,12 @@
 
     canvas.width = viewportWidth;
     canvas.height = viewportHeight;
-    minimapCanvas.width = minimapCanvas.offsetWidth;
-    minimapCanvas.height = minimapCanvas.offsetHeight;
+    
+    // ミニマップのサイズを明示的に設定
+    const minimapWidth = 240;
+    const minimapHeight = 160;
+    minimapCanvas.width = minimapWidth;
+    minimapCanvas.height = minimapHeight;
 
     let myId = null;
     let isHost = false;
@@ -403,12 +466,37 @@
     let joystickDir = { x: 0, y: 0 };
     let cameraX = 0;
     let cameraY = 0;
+    let playerIconData = null;
+    let playerIcons = new Map(); // プレイヤーアイコンのImage
 
     window.addEventListener('resize', () => {
       viewportWidth = window.innerWidth;
       viewportHeight = window.innerHeight;
       canvas.width = viewportWidth;
       canvas.height = viewportHeight;
+    });
+
+    // アイコンアップロード
+    const iconInput = document.getElementById('iconInput');
+    const iconPreview = document.getElementById('iconPreview');
+
+    iconInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          playerIconData = event.target.result;
+          iconPreview.innerHTML = '';
+          const img = document.createElement('img');
+          img.src = playerIconData;
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.objectFit = 'cover';
+          img.style.borderRadius = '50%';
+          iconPreview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      }
     });
 
     class Particle {
@@ -446,7 +534,7 @@
 
     document.getElementById('joinButton').addEventListener('click', () => {
       const name = document.getElementById('nameInput').value.trim() || 'Player';
-      socket.emit('join', name);
+      socket.emit('join', { name: name, icon: playerIconData });
       document.getElementById('loginScreen').classList.add('hidden');
       document.getElementById('lobbyScreen').classList.remove('hidden');
     });
@@ -457,9 +545,23 @@
       }
     });
 
+    // アイコン画像の読み込み
+    function loadPlayerIcon(player) {
+      if (player.icon && !playerIcons.has(player.id)) {
+        const img = new Image();
+        img.onload = () => {
+          playerIcons.set(player.id, img);
+        };
+        img.src = player.icon;
+      }
+    }
+
     socket.on('lobbyUpdate', (data) => {
       players = data.players;
       isHost = myId === data.hostId;
+
+      // アイコンを読み込み
+      players.forEach(player => loadPlayerIcon(player));
 
       const listDiv = document.getElementById('lobbyPlayerList');
       listDiv.innerHTML = '';
@@ -468,9 +570,29 @@
         const div = document.createElement('div');
         div.className = 'lobby-player' + (player.isTeacher ? ' teacher' : '');
         
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'lobby-player-info';
+        
+        const iconDiv = document.createElement('div');
+        iconDiv.className = 'lobby-player-icon';
+        if (player.icon) {
+          const img = document.createElement('img');
+          img.src = player.icon;
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.objectFit = 'cover';
+          img.style.borderRadius = '50%';
+          iconDiv.appendChild(img);
+        } else {
+          iconDiv.textContent = '👤';
+        }
+        
         const nameSpan = document.createElement('span');
-        nameSpan.textContent = player.isTeacher ? `👹 ${player.name} (鬼)` : `🏃 ${player.name}`;
-        div.appendChild(nameSpan);
+        nameSpan.textContent = player.isTeacher ? `${player.name} (鬼)` : player.name;
+        
+        infoDiv.appendChild(iconDiv);
+        infoDiv.appendChild(nameSpan);
+        div.appendChild(infoDiv);
         
         if (isHost && !player.isTeacher) {
           const btn = document.createElement('button');
@@ -502,6 +624,10 @@
       players = data.players;
       tasks = data.tasks;
       gameStarted = true;
+      
+      // アイコンを読み込み
+      players.forEach(player => loadPlayerIcon(player));
+      
       console.log('Game started, players:', players.length, 'tasks:', tasks.length);
     });
 
@@ -539,7 +665,30 @@
       data.players.forEach(player => {
         const div = document.createElement('div');
         div.className = 'lobby-player';
-        div.textContent = `🏃 ${player.name}`;
+        
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'lobby-player-info';
+        
+        const iconDiv = document.createElement('div');
+        iconDiv.className = 'lobby-player-icon';
+        if (player.icon) {
+          const img = document.createElement('img');
+          img.src = player.icon;
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.objectFit = 'cover';
+          img.style.borderRadius = '50%';
+          iconDiv.appendChild(img);
+        } else {
+          iconDiv.textContent = '👤';
+        }
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = player.name;
+        
+        infoDiv.appendChild(iconDiv);
+        infoDiv.appendChild(nameSpan);
+        div.appendChild(infoDiv);
         
         if (isHost) {
           const btn = document.createElement('button');
@@ -641,19 +790,31 @@
       isHost = data.isHost;
       WORLD_WIDTH = data.worldWidth;
       WORLD_HEIGHT = data.worldHeight;
+      
+      // アイコンを読み込み
+      players.forEach(player => loadPlayerIcon(player));
     });
 
     socket.on('playerJoined', (player) => {
       if (!gameStarted) {
         players.push(player);
+        loadPlayerIcon(player);
       }
     });
 
     socket.on('playerLeft', (id) => {
       players = players.filter(p => p.id !== id);
+      playerIcons.delete(id);
     });
 
     socket.on('update', (data) => {
+      // 新しいプレイヤーのアイコンを読み込み
+      data.players.forEach(player => {
+        if (!players.find(p => p.id === player.id)) {
+          loadPlayerIcon(player);
+        }
+      });
+      
       players = data.players;
       tasks = data.tasks;
       exitOpen = data.exitOpen;
@@ -662,7 +823,9 @@
     socket.on('taskCompleted', (data) => {
       for (let i = 0; i < 40; i++) {
         const task = tasks[data.taskId];
-        particles.push(new Particle(task.x, task.y, '#00ff00'));
+        if (task) {
+          particles.push(new Particle(task.x, task.y, '#00ff00'));
+        }
       }
     });
 
@@ -705,38 +868,60 @@
     }
 
     function drawMinimap() {
-      const mmWidth = minimapCanvas.width;
-      const mmHeight = minimapCanvas.height;
-      const scaleX = mmWidth / WORLD_WIDTH;
-      const scaleY = mmHeight / WORLD_HEIGHT;
+      const scaleX = minimapWidth / WORLD_WIDTH;
+      const scaleY = minimapHeight / WORLD_HEIGHT;
 
+      // 背景
       minimapCtx.fillStyle = 'rgba(10, 10, 10, 0.9)';
-      minimapCtx.fillRect(0, 0, mmWidth, mmHeight);
+      minimapCtx.fillRect(0, 0, minimapWidth, minimapHeight);
 
+      // 障害物（薄く）
+      minimapCtx.fillStyle = 'rgba(50, 50, 50, 0.5)';
+      obstacles.forEach(obs => {
+        const x = obs.x * scaleX;
+        const y = obs.y * scaleY;
+        const w = obs.width * scaleX;
+        const h = obs.height * scaleY;
+        minimapCtx.fillRect(x, y, w, h);
+      });
+
+      // タスク
       tasks.forEach(task => {
         const x = task.x * scaleX;
         const y = task.y * scaleY;
         minimapCtx.fillStyle = task.completed ? '#00ff00' : '#ffaa00';
-        minimapCtx.fillRect(x - 2, y - 2, 4, 4);
+        minimapCtx.shadowBlur = 3;
+        minimapCtx.shadowColor = minimapCtx.fillStyle;
+        minimapCtx.beginPath();
+        minimapCtx.arc(x, y, 3, 0, Math.PI * 2);
+        minimapCtx.fill();
+        minimapCtx.shadowBlur = 0;
       });
 
+      // 出口
       if (exitOpen) {
         const exitX = (WORLD_WIDTH / 2) * scaleX;
         const exitY = 200 * scaleY;
         minimapCtx.fillStyle = '#00ff00';
-        minimapCtx.fillRect(exitX - 3, exitY - 3, 6, 6);
+        minimapCtx.shadowBlur = 5;
+        minimapCtx.shadowColor = '#00ff00';
+        minimapCtx.beginPath();
+        minimapCtx.arc(exitX, exitY, 4, 0, Math.PI * 2);
+        minimapCtx.fill();
+        minimapCtx.shadowBlur = 0;
       }
 
+      // プレイヤー
       players.forEach(player => {
         if (player.isCaptured && !player.isTeacher) return;
 
         const x = player.x * scaleX;
         const y = player.y * scaleY;
         const color = player.isTeacher ? '#ff0000' : '#00ffff';
-        const size = player.isTeacher ? 4 : 3;
+        const size = player.isTeacher ? 5 : 4;
 
         minimapCtx.fillStyle = color;
-        minimapCtx.shadowBlur = 6;
+        minimapCtx.shadowBlur = 8;
         minimapCtx.shadowColor = color;
         minimapCtx.beginPath();
         minimapCtx.arc(x, y, size, 0, Math.PI * 2);
@@ -744,6 +929,7 @@
         minimapCtx.shadowBlur = 0;
       });
 
+      // 視野範囲
       const me = players.find(p => p.id === myId);
       if (me) {
         const viewWidth = (viewportWidth / ZOOM_FACTOR) * scaleX;
@@ -751,8 +937,8 @@
         const viewX = cameraX * scaleX;
         const viewY = cameraY * scaleY;
 
-        minimapCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-        minimapCtx.lineWidth = 1;
+        minimapCtx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+        minimapCtx.lineWidth = 2;
         minimapCtx.strokeRect(viewX, viewY, viewWidth, viewHeight);
       }
     }
@@ -943,14 +1129,36 @@
         ctx.fill();
         ctx.restore();
 
-        const gradient = ctx.createRadialGradient(player.x, player.y, 5, player.x, player.y, size);
-        gradient.addColorStop(0, '#ffffff');
-        gradient.addColorStop(0.4, color);
-        gradient.addColorStop(1, player.isTeacher ? '#880000' : '#004444');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(player.x, player.y, size, 0, Math.PI * 2);
-        ctx.fill();
+        // プレイヤーアイコン（画像）
+        const iconImg = playerIcons.get(player.id);
+        if (iconImg) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(player.x, player.y, size, 0, Math.PI * 2);
+          ctx.closePath();
+          ctx.clip();
+          ctx.drawImage(iconImg, player.x - size, player.y - size, size * 2, size * 2);
+          ctx.restore();
+          
+          // 縁取り
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 3;
+          ctx.shadowBlur = 15;
+          ctx.shadowColor = color;
+          ctx.beginPath();
+          ctx.arc(player.x, player.y, size, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          // デフォルト表示
+          const gradient = ctx.createRadialGradient(player.x, player.y, 5, player.x, player.y, size);
+          gradient.addColorStop(0, '#ffffff');
+          gradient.addColorStop(0.4, color);
+          gradient.addColorStop(1, player.isTeacher ? '#880000' : '#004444');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(player.x, player.y, size, 0, Math.PI * 2);
+          ctx.fill();
+        }
 
         ctx.save();
         ctx.fillStyle = '#fff';
