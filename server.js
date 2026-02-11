@@ -26,7 +26,6 @@ let gameState = {
   lobbyHost: null
 };
 
-// タスク生成
 function generateTasks() {
   const tasks = [];
   const positions = [
@@ -52,7 +51,6 @@ function generateTasks() {
   return tasks;
 }
 
-// 障害物
 const obstacles = [
   { x: 500, y: 300, width: 200, height: 40 },
   { x: 1700, y: 300, width: 200, height: 40 },
@@ -141,14 +139,25 @@ io.on('connection', (socket) => {
   });
 
   socket.on('startGame', () => {
-    if (socket.id !== gameState.lobbyHost || gameState.gameStarted) return;
+    console.log('startGame called by', socket.id);
+    if (socket.id !== gameState.lobbyHost) {
+      console.log('Not host, ignoring');
+      return;
+    }
+    if (gameState.gameStarted) {
+      console.log('Game already started, ignoring');
+      return;
+    }
     
+    // 先生が選ばれていない場合は最初のプレイヤーを先生に
     if (!gameState.teacherId && gameState.players.size > 0) {
       const firstPlayer = Array.from(gameState.players.values())[0];
       firstPlayer.isTeacher = true;
       gameState.teacherId = firstPlayer.id;
+      console.log('Auto-assigned teacher:', firstPlayer.id);
     }
 
+    // スポーン地点を設定
     gameState.players.forEach(player => {
       if (player.isTeacher) {
         const spawn = getTeacherSpawn();
@@ -169,17 +178,21 @@ io.on('connection', (socket) => {
     gameState.exitOpen = false;
     gameState.countdown = 3;
 
+    console.log('Emitting gameStart event');
     io.emit('gameStart', {
       players: Array.from(gameState.players.values()),
       tasks: gameState.tasks
     });
 
+    // カウントダウン
     const countdownInterval = setInterval(() => {
       gameState.countdown--;
+      console.log('Countdown:', gameState.countdown);
       io.emit('countdown', gameState.countdown);
       
       if (gameState.countdown <= 0) {
         clearInterval(countdownInterval);
+        console.log('Countdown finished, game fully started');
       }
     }, 1000);
   });

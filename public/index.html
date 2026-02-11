@@ -498,19 +498,23 @@
       socket.emit('restartGame');
     });
 
-    // ゲーム開始
+   // ゲーム開始
     socket.on('gameStart', (data) => {
+      console.log('Received gameStart event', data);
       document.getElementById('lobbyScreen').classList.add('hidden');
       document.getElementById('gameContainer').style.display = 'block';
       players = data.players;
       tasks = data.tasks;
       gameStarted = true;
+      console.log('Game started, players:', players.length, 'tasks:', tasks.length);
     });
 
     socket.on('countdown', (count) => {
+      console.log('Countdown:', count);
       const countdownDiv = document.getElementById('countdown');
       if (count > 0) {
         countdownDiv.textContent = count;
+        countdownDiv.style.color = '#ff0000';
         countdownDiv.style.display = 'block';
         setTimeout(() => {
           countdownDiv.style.display = 'none';
