@@ -12,7 +12,8 @@ const TEACHER_SPEED = 6;
 const STUDENT_SPEED = 4.5;
 const TASK_COUNT = 5;
 const CAPTURE_DISTANCE = 40;
-const TASK_DISTANCE = 60;
+const TASK_DISTANCE = 70;
+const EXIT_DISTANCE = 100;
 
 let gameState = {
   players: new Map(),
@@ -108,56 +109,6 @@ io.on('connection', (socket) => {
     player.vy = direction.y * speed;
   });
 
-  socket.on('interactTask', (taskId) => {
-    const player = gameState.players.get(socket.id);
-    if (!player || player.isTeacher || player.isCaptured) return;
-
-    const task = gameState.tasks[taskId];
-    if (!task || task.completed) return;
-
-    const dx = task.x - player.x;
-    const dy = task.y - player.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    if (distance < TASK_DISTANCE) {
-      task.progress += 2;
-      if (task.progress >= 100) {
-        task.completed = true;
-        gameState.tasksCompleted++;
-        player.score += 100;
-
-        io.emit('taskCompleted', { taskId, playerId: socket.id });
-
-        // 全タスク完了で出口オープン
-        if (gameState.tasksCompleted >= TASK_COUNT) {
-          gameState.exitOpen = true;
-          io.emit('exitOpen');
-        }
-      }
-    }
-  });
-
-  socket.on('escape', () => {
-    const player = gameState.players.get(socket.id);
-    if (!player || player.isTeacher || player.isCaptured || !gameState.exitOpen) return;
-
-    // 出口判定
-    const exitX = CANVAS_WIDTH / 2;
-    const exitY = 50;
-    const dx = exitX - player.x;
-    const dy = exitY - player.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    if (distance < 80) {
-      player.score += 500;
-      player.isCaptured = true; // 脱出済みフラグ
-      io.emit('playerEscaped', { playerId: socket.id, name: player.name });
-      
-      // 全員脱出したらゲーム終了
-      checkGameEnd();
-    }
-  });
-
   socket.on('disconnect', () => {
     const player = gameState.players.get(socket.id);
     
@@ -212,6 +163,60 @@ setInterval(() => {
     });
   });
 
+  // タスク自動進行（近くで立ち止まっている生徒）
+  gameState.players.forEach(player => {
+    if (player.isTeacher || player.isCaptured) return;
+    
+    const isMoving = Math.abs(player.vx) > 0.1 || Math.abs(player.vy) > 0.1;
+    
+    gameState.tasks.forEach(task => {
+      if (task.completed) return;
+      
+      const dx = task.x - player.x;
+      const dy = task.y - player.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance < TASK_DISTANCE && !isMoving) {
+        task.progress += 1.5;
+        
+        if (task.progress >= 100) {
+          task.completed = true;
+          gameState.tasksCompleted++;
+          player.score += 100;
+          
+          io.emit('taskCompleted', { taskId: task.id, playerId: player.id });
+          
+          // 全タスク完了で出口オープン
+          if (gameState.tasksCompleted >= TASK_COUNT) {
+            gameState.exitOpen = true;
+            io.emit('exitOpen');
+          }
+        }
+      }
+    });
+  });
+
+  // 出口での脱出判定
+  if (gameState.exitOpen) {
+    const exitX = CANVAS_WIDTH / 2;
+    const exitY = 80;
+    
+    gameState.players.forEach(player => {
+      if (player.isTeacher || player.isCaptured) return;
+      
+      const dx = exitX - player.x;
+      const dy = exitY - player.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance < EXIT_DISTANCE) {
+        player.score += 500;
+        player.isCaptured = true;
+        io.emit('playerEscaped', { playerId: player.id, name: player.name });
+        checkGameEnd();
+      }
+    });
+  }
+
   // 捕獲判定
   if (gameState.teacherId && gameState.players.has(gameState.teacherId)) {
     const teacher = gameState.players.get(gameState.teacherId);
@@ -232,7 +237,6 @@ setInterval(() => {
           studentName: player.name 
         });
 
-        // ゲーム終了判定
         checkGameEnd();
       }
     });

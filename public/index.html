@@ -215,24 +215,6 @@
       transform: translate(-50%, -50%);
     }
 
-    #interactBtn {
-      position: fixed;
-      bottom: 30px;
-      right: 30px;
-      width: 80px;
-      height: 80px;
-      background: radial-gradient(circle, #00ff00 0%, #00aa00 100%);
-      border-radius: 50%;
-      border: 3px solid #00ff00;
-      box-shadow: 0 0 30px rgba(0, 255, 0, 0.6);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      font-size: 2em;
-      z-index: 50;
-      cursor: pointer;
-    }
-
     #notification {
       position: fixed;
       top: 50%;
@@ -260,7 +242,7 @@
     }
 
     @media (max-width: 768px) {
-      #joystickArea, #interactBtn {
+      #joystickArea {
         display: flex;
       }
     }
@@ -296,8 +278,6 @@
       <div id="joystick"></div>
     </div>
 
-    <div id="interactBtn">📝</div>
-
     <div id="notification">
       <h2 id="notifTitle">通知</h2>
       <p id="notifText"></p>
@@ -318,7 +298,6 @@
     let keys = {};
     let joystickActive = false;
     let joystickDir = { x: 0, y: 0 };
-    let nearbyTask = null;
 
     class Particle {
       constructor(x, y, color) {
@@ -370,9 +349,6 @@
     // キーボード操作
     document.addEventListener('keydown', (e) => {
       keys[e.key] = true;
-      if (e.key === ' ' || e.key === 'e' || e.key === 'E') {
-        interactWithTask();
-      }
       updateMovement();
     });
 
@@ -446,31 +422,6 @@
       socket.emit('move', joystickDir);
     }
 
-    // インタラクトボタン
-    document.getElementById('interactBtn').addEventListener('click', interactWithTask);
-
-    function interactWithTask() {
-      const me = players.find(p => p.id === myId);
-      if (!me || me.isTeacher || me.isCaptured) return;
-
-      if (nearbyTask !== null) {
-        socket.emit('interactTask', nearbyTask);
-      }
-
-      // 脱出判定
-      if (exitOpen) {
-        const exitX = canvas.width / 2;
-        const exitY = 50;
-        const dx = exitX - me.x;
-        const dy = exitY - me.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance < 80) {
-          socket.emit('escape');
-        }
-      }
-    }
-
     // Socket.io イベント
     socket.on('init', (data) => {
       myId = data.id;
@@ -510,7 +461,7 @@
     });
 
     socket.on('exitOpen', () => {
-      showNotification('脱出可能！', '全タスク完了！出口へ急げ！');
+      showNotification('脱出可能！', '全タスク完了！画面上部の出口へ急げ！');
     });
 
     socket.on('gameEnd', (data) => {
@@ -535,7 +486,10 @@
     }
 
     // 描画ループ
+    let time = 0;
     function draw() {
+      time += 0.02;
+
       // 背景
       ctx.fillStyle = '#1a1a1a';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -569,30 +523,73 @@
         ctx.restore();
       });
 
-      // 出口
+      // 出口（超目立つアニメーション）
       if (exitOpen) {
         const exitX = canvas.width / 2;
-        const exitY = 50;
+        const exitY = 80;
         
+        // 背景の光
         ctx.save();
+        const glowSize = 150 + Math.sin(time * 3) * 20;
+        ctx.shadowBlur = glowSize;
+        ctx.shadowColor = '#00ff00';
+        ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+        ctx.beginPath();
+        ctx.arc(exitX, exitY, 80, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // 外側のリング
+        ctx.save();
+        ctx.strokeStyle = '#00ff00';
+        ctx.lineWidth = 5;
         ctx.shadowBlur = 40;
         ctx.shadowColor = '#00ff00';
-        ctx.fillStyle = '#00ff00';
-        ctx.font = 'bold 30px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('🚪 出口', exitX, exitY);
-        
         ctx.beginPath();
-        ctx.arc(exitX, exitY + 20, 60, 0, Math.PI * 2);
-        ctx.strokeStyle = '#00ff00';
-        ctx.lineWidth = 3;
+        ctx.arc(exitX, exitY, 90 + Math.sin(time * 5) * 10, 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
+
+        // 内側のリング
+        ctx.save();
+        ctx.strokeStyle = '#00ff00';
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = '#00ff00';
+        ctx.beginPath();
+        ctx.arc(exitX, exitY, 60, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        // 矢印
+        ctx.save();
+        ctx.fillStyle = '#00ff00';
+        ctx.font = 'bold 50px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowBlur = 50;
+        ctx.shadowColor = '#00ff00';
+        ctx.fillText('⬆', exitX, exitY - 10);
+        ctx.restore();
+
+        // テキスト
+        ctx.save();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 28px Arial';
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = '#00ff00';
+        ctx.fillText('🚪 出口', exitX, exitY + 50);
+        ctx.restore();
+
+        // パーティクル生成
+        if (Math.random() > 0.7) {
+          particles.push(new Particle(exitX + (Math.random() - 0.5) * 100, exitY, '#00ff00'));
+        }
       }
 
       // タスク
       const me = players.find(p => p.id === myId);
-      nearbyTask = null;
       
       tasks.forEach(task => {
         const color = task.completed ? '#00ff00' : '#ffaa00';
@@ -614,10 +611,15 @@
         // プログレスバー
         if (!task.completed && task.progress > 0) {
           ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-          ctx.fillRect(task.x - 30, task.y - 35, 60, 8);
+          ctx.fillRect(task.x - 35, task.y - 40, 70, 10);
           
           ctx.fillStyle = '#00ff00';
-          ctx.fillRect(task.x - 30, task.y - 35, 60 * (task.progress / 100), 8);
+          ctx.fillRect(task.x - 35, task.y - 40, 70 * (task.progress / 100), 10);
+          
+          // パーセント表示
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 10px Arial';
+          ctx.fillText(Math.floor(task.progress) + '%', task.x, task.y - 48);
         }
         
         ctx.restore();
@@ -627,17 +629,16 @@
           const dx = task.x - me.x;
           const dy = task.y - me.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
+          const isMoving = Math.abs(me.vx) > 0.1 || Math.abs(me.vy) > 0.1;
           
-          if (distance < 60) {
-            nearbyTask = task.id;
-            
+          if (distance < 70) {
             ctx.save();
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 14px Arial';
             ctx.textAlign = 'center';
             ctx.shadowBlur = 10;
             ctx.shadowColor = '#000';
-            ctx.fillText('[E] 宿題提出', task.x, task.y - 45);
+            ctx.fillText(isMoving ? '立ち止まって提出' : '提出中...', task.x, task.y - 55);
             ctx.restore();
           }
         }
@@ -653,7 +654,7 @@
       // プレイヤー
       players.forEach(player => {
         if (player.isCaptured && !player.isTeacher) {
-          return; // 捕獲された生徒は表示しない
+          return;
         }
 
         const color = player.isTeacher ? '#ff0000' : '#00ffff';
