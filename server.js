@@ -403,7 +403,7 @@ setInterval(() => {
     tasks: gameState.tasks,
     exitOpen: gameState.exitOpen
   });
-}, 1000 / 60);
+}, 1000 / 30);
 
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
