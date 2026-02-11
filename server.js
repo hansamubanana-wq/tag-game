@@ -5,14 +5,55 @@ const io = require('socket.io')(http);
 
 app.use(express.static('public'));
 
-const players = new Map();
-const CANVAS_WIDTH = 800;
-const CANVAS_HEIGHT = 600;
-const PLAYER_SIZE = 20;
-const IT_SPEED = 5;
-const NORMAL_SPEED = 4;
+const CANVAS_WIDTH = 1200;
+const CANVAS_HEIGHT = 800;
+const PLAYER_SIZE = 25;
+const TEACHER_SPEED = 6;
+const STUDENT_SPEED = 4.5;
+const TASK_COUNT = 5;
+const CAPTURE_DISTANCE = 40;
+const TASK_DISTANCE = 60;
 
-let currentIt = null;
+let gameState = {
+  players: new Map(),
+  tasks: [],
+  teacherId: null,
+  gameStarted: false,
+  tasksCompleted: 0,
+  exitOpen: false
+};
+
+// タスク生成
+function generateTasks() {
+  const tasks = [];
+  const positions = [
+    { x: 200, y: 150 },
+    { x: 1000, y: 150 },
+    { x: 600, y: 400 },
+    { x: 200, y: 650 },
+    { x: 1000, y: 650 }
+  ];
+  
+  for (let i = 0; i < TASK_COUNT; i++) {
+    tasks.push({
+      id: i,
+      x: positions[i].x,
+      y: positions[i].y,
+      completed: false,
+      progress: 0
+    });
+  }
+  return tasks;
+}
+
+// 障害物
+const obstacles = [
+  { x: 350, y: 200, width: 150, height: 30 },
+  { x: 700, y: 200, width: 150, height: 30 },
+  { x: 350, y: 500, width: 150, height: 30 },
+  { x: 700, y: 500, width: 150, height: 30 },
+  { x: 550, y: 350, width: 100, height: 30 }
+];
 
 io.on('connection', (socket) => {
   console.log('Player connected:', socket.id);
@@ -20,66 +61,138 @@ io.on('connection', (socket) => {
   socket.on('join', (name) => {
     const player = {
       id: socket.id,
-      name: name || 'Player',
-      x: Math.random() * (CANVAS_WIDTH - 100) + 50,
-      y: Math.random() * (CANVAS_HEIGHT - 100) + 50,
+      name: name || 'Student',
+      x: Math.random() * 400 + 400,
+      y: Math.random() * 200 + 300,
       vx: 0,
       vy: 0,
-      isIt: false,
-      score: 0,
-      survivalTime: 0
+      isTeacher: false,
+      isCaptured: false,
+      score: 0
     };
 
-    // 最初のプレイヤーを鬼に設定
-    if (players.size === 0) {
-      player.isIt = true;
-      currentIt = socket.id;
+    // 最初のプレイヤーを先生に
+    if (gameState.players.size === 0) {
+      player.isTeacher = true;
+      player.name = '加藤先生';
+      gameState.teacherId = socket.id;
     }
 
-    players.set(socket.id, player);
-    
+    gameState.players.set(socket.id, player);
+
+    // ゲーム開始（2人以上）
+    if (gameState.players.size >= 2 && !gameState.gameStarted) {
+      gameState.gameStarted = true;
+      gameState.tasks = generateTasks();
+      gameState.tasksCompleted = 0;
+      gameState.exitOpen = false;
+    }
+
     socket.emit('init', {
       id: socket.id,
-      players: Array.from(players.values())
+      players: Array.from(gameState.players.values()),
+      tasks: gameState.tasks,
+      obstacles: obstacles,
+      exitOpen: gameState.exitOpen
     });
 
     socket.broadcast.emit('playerJoined', player);
   });
 
   socket.on('move', (direction) => {
-    const player = players.get(socket.id);
-    if (!player) return;
+    const player = gameState.players.get(socket.id);
+    if (!player || player.isCaptured) return;
 
-    const speed = player.isIt ? IT_SPEED : NORMAL_SPEED;
+    const speed = player.isTeacher ? TEACHER_SPEED : STUDENT_SPEED;
     player.vx = direction.x * speed;
     player.vy = direction.y * speed;
   });
 
-  socket.on('disconnect', () => {
-    const player = players.get(socket.id);
-    if (player && player.isIt && players.size > 1) {
-      // 鬼が切断したら次のプレイヤーを鬼に
-      players.delete(socket.id);
-      const newIt = Array.from(players.keys())[0];
-      if (newIt) {
-        players.get(newIt).isIt = true;
-        currentIt = newIt;
-        io.emit('newIt', newIt);
+  socket.on('interactTask', (taskId) => {
+    const player = gameState.players.get(socket.id);
+    if (!player || player.isTeacher || player.isCaptured) return;
+
+    const task = gameState.tasks[taskId];
+    if (!task || task.completed) return;
+
+    const dx = task.x - player.x;
+    const dy = task.y - player.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance < TASK_DISTANCE) {
+      task.progress += 2;
+      if (task.progress >= 100) {
+        task.completed = true;
+        gameState.tasksCompleted++;
+        player.score += 100;
+
+        io.emit('taskCompleted', { taskId, playerId: socket.id });
+
+        // 全タスク完了で出口オープン
+        if (gameState.tasksCompleted >= TASK_COUNT) {
+          gameState.exitOpen = true;
+          io.emit('exitOpen');
+        }
       }
-    } else {
-      players.delete(socket.id);
     }
+  });
+
+  socket.on('escape', () => {
+    const player = gameState.players.get(socket.id);
+    if (!player || player.isTeacher || player.isCaptured || !gameState.exitOpen) return;
+
+    // 出口判定
+    const exitX = CANVAS_WIDTH / 2;
+    const exitY = 50;
+    const dx = exitX - player.x;
+    const dy = exitY - player.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance < 80) {
+      player.score += 500;
+      player.isCaptured = true; // 脱出済みフラグ
+      io.emit('playerEscaped', { playerId: socket.id, name: player.name });
+      
+      // 全員脱出したらゲーム終了
+      checkGameEnd();
+    }
+  });
+
+  socket.on('disconnect', () => {
+    const player = gameState.players.get(socket.id);
+    
+    if (player && player.isTeacher && gameState.players.size > 1) {
+      gameState.players.delete(socket.id);
+      // 新しい先生を選出
+      const newTeacher = Array.from(gameState.players.values())[0];
+      newTeacher.isTeacher = true;
+      newTeacher.name = '加藤先生';
+      gameState.teacherId = newTeacher.id;
+      io.emit('newTeacher', newTeacher.id);
+    } else {
+      gameState.players.delete(socket.id);
+    }
+
     io.emit('playerLeft', socket.id);
     console.log('Player disconnected:', socket.id);
   });
 });
 
+function checkGameEnd() {
+  const alivePlayers = Array.from(gameState.players.values()).filter(p => !p.isTeacher && !p.isCaptured);
+  if (alivePlayers.length === 0) {
+    io.emit('gameEnd', { winner: 'teacher' });
+  }
+}
+
 // ゲームループ
 setInterval(() => {
-  if (players.size === 0) return;
+  if (gameState.players.size === 0 || !gameState.gameStarted) return;
 
   // プレイヤー位置更新
-  players.forEach(player => {
+  gameState.players.forEach(player => {
+    if (player.isCaptured) return;
+
     player.x += player.vx;
     player.y += player.vy;
 
@@ -87,42 +200,50 @@ setInterval(() => {
     player.x = Math.max(PLAYER_SIZE, Math.min(CANVAS_WIDTH - PLAYER_SIZE, player.x));
     player.y = Math.max(PLAYER_SIZE, Math.min(CANVAS_HEIGHT - PLAYER_SIZE, player.y));
 
-    // 生存時間加算（鬼以外）
-    if (!player.isIt) {
-      player.survivalTime += 1/60;
-    }
+    // 障害物との衝突
+    obstacles.forEach(obs => {
+      if (player.x + PLAYER_SIZE > obs.x && 
+          player.x - PLAYER_SIZE < obs.x + obs.width &&
+          player.y + PLAYER_SIZE > obs.y && 
+          player.y - PLAYER_SIZE < obs.y + obs.height) {
+        player.x -= player.vx;
+        player.y -= player.vy;
+      }
+    });
   });
 
-  // 衝突判定
-  if (currentIt && players.has(currentIt)) {
-    const itPlayer = players.get(currentIt);
-    players.forEach(player => {
-      if (player.id === currentIt || player.isIt) return;
+  // 捕獲判定
+  if (gameState.teacherId && gameState.players.has(gameState.teacherId)) {
+    const teacher = gameState.players.get(gameState.teacherId);
+    
+    gameState.players.forEach(player => {
+      if (player.id === gameState.teacherId || player.isCaptured || player.isTeacher) return;
 
-      const dx = itPlayer.x - player.x;
-      const dy = itPlayer.y - player.y;
+      const dx = teacher.x - player.x;
+      const dy = teacher.y - player.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
-      if (distance < PLAYER_SIZE * 2) {
-        // 鬼交代
-        itPlayer.isIt = false;
-        itPlayer.score += Math.floor(itPlayer.survivalTime);
-        itPlayer.survivalTime = 0;
-        
-        player.isIt = true;
-        player.survivalTime = 0;
-        currentIt = player.id;
-
-        io.emit('tag', {
-          oldIt: itPlayer.id,
-          newIt: player.id
+      if (distance < CAPTURE_DISTANCE) {
+        player.isCaptured = true;
+        teacher.score += 200;
+        io.emit('playerCaptured', { 
+          teacherId: teacher.id, 
+          studentId: player.id,
+          studentName: player.name 
         });
+
+        // ゲーム終了判定
+        checkGameEnd();
       }
     });
   }
 
-  // 状態をブロードキャスト
-  io.emit('update', Array.from(players.values()));
+  // 状態ブロードキャスト
+  io.emit('update', {
+    players: Array.from(gameState.players.values()),
+    tasks: gameState.tasks,
+    exitOpen: gameState.exitOpen
+  });
 }, 1000 / 60);
 
 const PORT = process.env.PORT || 3000;

@@ -1,7 +1,7 @@
 {
-  "name": "neon-tag-game",
+  "name": "kato-sensei-online",
   "version": "1.0.0",
-  "description": "Multiplayer tag game with neon effects",
+  "description": "Escape from Kato-sensei - Online multiplayer stealth game",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
