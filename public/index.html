@@ -129,8 +129,8 @@
       position: fixed;
       bottom: 15px;
       left: 15px;
-      width: 200px;
-      height: 133px;
+      width: 240px;
+      height: 160px;
       background: rgba(0, 0, 0, 0.85);
       border: 2px solid #ff0000;
       border-radius: 8px;
@@ -226,7 +226,7 @@
 
     #joystickArea {
       position: fixed;
-      bottom: 165px;
+      bottom: 190px;
       left: 30px;
       width: 150px;
       height: 150px;
@@ -305,8 +305,8 @@
       }
 
       #minimap {
-        width: 160px;
-        height: 107px;
+        width: 180px;
+        height: 120px;
       }
 
       #hud {
@@ -350,7 +350,7 @@
 
     <div id="taskProgress">
       <h3>📋 タスク進捗</h3>
-      <p id="taskText">0/8</p>
+      <p id="taskText">0/12</p>
     </div>
 
     <div id="playerList">
@@ -379,12 +379,11 @@
     const minimapCtx = minimapCanvas.getContext('2d');
     const socket = io();
 
-    let WORLD_WIDTH = 2400;
-    let WORLD_HEIGHT = 1600;
+    let WORLD_WIDTH = 3600;
+    let WORLD_HEIGHT = 2400;
     let viewportWidth = window.innerWidth;
     let viewportHeight = window.innerHeight;
 
-    // 視野角を広げる（1.5倍）
     const ZOOM_FACTOR = 0.65;
 
     canvas.width = viewportWidth;
@@ -445,7 +444,6 @@
 
     let particles = [];
 
-    // ログイン
     document.getElementById('joinButton').addEventListener('click', () => {
       const name = document.getElementById('nameInput').value.trim() || 'Player';
       socket.emit('join', name);
@@ -459,7 +457,6 @@
       }
     });
 
-    // ロビー
     socket.on('lobbyUpdate', (data) => {
       players = data.players;
       isHost = myId === data.hostId;
@@ -498,7 +495,6 @@
       socket.emit('restartGame');
     });
 
-   // ゲーム開始
     socket.on('gameStart', (data) => {
       console.log('Received gameStart event', data);
       document.getElementById('lobbyScreen').classList.add('hidden');
@@ -558,7 +554,6 @@
       });
     });
 
-    // キーボード操作
     document.addEventListener('keydown', (e) => {
       keys[e.key] = true;
       updateMovement();
@@ -586,7 +581,6 @@
       socket.emit('move', { x, y });
     }
 
-    // ジョイスティック（完全修正版）
     const joystickArea = document.getElementById('joystickArea');
     const joystick = document.getElementById('joystick');
 
@@ -637,7 +631,6 @@
       socket.emit('move', joystickDir);
     }
 
-    // Socket.io イベント
     socket.on('init', (data) => {
       myId = data.id;
       players = data.players;
@@ -711,7 +704,6 @@
       }
     }
 
-    // ミニマップ描画
     function drawMinimap() {
       const mmWidth = minimapCanvas.width;
       const mmHeight = minimapCanvas.height;
@@ -721,33 +713,30 @@
       minimapCtx.fillStyle = 'rgba(10, 10, 10, 0.9)';
       minimapCtx.fillRect(0, 0, mmWidth, mmHeight);
 
-      // タスク
       tasks.forEach(task => {
         const x = task.x * scaleX;
         const y = task.y * scaleY;
         minimapCtx.fillStyle = task.completed ? '#00ff00' : '#ffaa00';
-        minimapCtx.fillRect(x - 3, y - 3, 6, 6);
+        minimapCtx.fillRect(x - 2, y - 2, 4, 4);
       });
 
-      // 出口
       if (exitOpen) {
         const exitX = (WORLD_WIDTH / 2) * scaleX;
-        const exitY = 150 * scaleY;
+        const exitY = 200 * scaleY;
         minimapCtx.fillStyle = '#00ff00';
-        minimapCtx.fillRect(exitX - 4, exitY - 4, 8, 8);
+        minimapCtx.fillRect(exitX - 3, exitY - 3, 6, 6);
       }
 
-      // プレイヤー
       players.forEach(player => {
         if (player.isCaptured && !player.isTeacher) return;
 
         const x = player.x * scaleX;
         const y = player.y * scaleY;
         const color = player.isTeacher ? '#ff0000' : '#00ffff';
-        const size = player.isTeacher ? 5 : 4;
+        const size = player.isTeacher ? 4 : 3;
 
         minimapCtx.fillStyle = color;
-        minimapCtx.shadowBlur = 8;
+        minimapCtx.shadowBlur = 6;
         minimapCtx.shadowColor = color;
         minimapCtx.beginPath();
         minimapCtx.arc(x, y, size, 0, Math.PI * 2);
@@ -755,7 +744,6 @@
         minimapCtx.shadowBlur = 0;
       });
 
-      // 視野範囲
       const me = players.find(p => p.id === myId);
       if (me) {
         const viewWidth = (viewportWidth / ZOOM_FACTOR) * scaleX;
@@ -769,12 +757,10 @@
       }
     }
 
-    // 描画ループ
     let time = 0;
     function draw() {
       time += 0.02;
 
-      // カメラ追従（視野角拡大）
       const me = players.find(p => p.id === myId);
       if (me) {
         const effectiveViewWidth = viewportWidth / ZOOM_FACTOR;
@@ -787,7 +773,6 @@
         cameraY = Math.max(0, Math.min(WORLD_HEIGHT - effectiveViewHeight, cameraY));
       }
 
-      // 背景
       ctx.fillStyle = '#1a1a1a';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -795,10 +780,9 @@
       ctx.scale(ZOOM_FACTOR, ZOOM_FACTOR);
       ctx.translate(-cameraX, -cameraY);
 
-      // グリッド
       ctx.strokeStyle = 'rgba(255, 0, 0, 0.08)';
       ctx.lineWidth = 1;
-      const gridSize = 80;
+      const gridSize = 100;
       const startX = Math.floor(cameraX / gridSize) * gridSize;
       const startY = Math.floor(cameraY / gridSize) * gridSize;
       const endX = cameraX + viewportWidth / ZOOM_FACTOR;
@@ -817,7 +801,6 @@
         ctx.stroke();
       }
 
-      // 障害物
       obstacles.forEach(obs => {
         ctx.save();
         ctx.shadowBlur = 20;
@@ -830,10 +813,9 @@
         ctx.restore();
       });
 
-      // 出口
       if (exitOpen) {
         const exitX = WORLD_WIDTH / 2;
-        const exitY = 150;
+        const exitY = 200;
         
         ctx.save();
         const glowSize = 180 + Math.sin(time * 3) * 25;
@@ -879,7 +861,6 @@
         }
       }
 
-      // タスク
       tasks.forEach(task => {
         const color = task.completed ? '#00ff00' : '#ffaa00';
         
@@ -928,7 +909,6 @@
         }
       });
 
-      // パーティクル（ワールド座標系）
       particles = particles.filter(p => p.life > 0);
       particles.forEach(p => {
         p.update();
@@ -943,7 +923,6 @@
         ctx.restore();
       });
 
-      // プレイヤー
       players.forEach(player => {
         if (player.isCaptured && !player.isTeacher) return;
 
@@ -995,10 +974,8 @@
 
       ctx.restore();
 
-      // ミニマップ描画
       drawMinimap();
 
-      // HUD更新
       if (me) {
         const roleIcon = me.isTeacher ? '👹' : (me.isCaptured ? '👻' : '🏃');
         const roleText = me.isTeacher ? '鬼' : (me.isCaptured ? '観戦中' : '生徒');
@@ -1010,7 +987,6 @@
         document.getElementById('taskText').textContent = `${completedTasks}/${tasks.length}`;
       }
 
-      // プレイヤーリスト
       const listContent = document.getElementById('playerListContent');
       listContent.innerHTML = '';
       players

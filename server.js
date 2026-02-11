@@ -5,12 +5,12 @@ const io = require('socket.io')(http);
 
 app.use(express.static('public'));
 
-const CANVAS_WIDTH = 2400;
-const CANVAS_HEIGHT = 1600;
+const CANVAS_WIDTH = 3600;
+const CANVAS_HEIGHT = 2400;
 const PLAYER_SIZE = 30;
 const TEACHER_SPEED = 6.5;
 const STUDENT_SPEED = 5;
-const TASK_COUNT = 8;
+const TASK_COUNT = 12;
 const CAPTURE_DISTANCE = 50;
 const TASK_DISTANCE = 80;
 const EXIT_DISTANCE = 120;
@@ -29,14 +29,18 @@ let gameState = {
 function generateTasks() {
   const tasks = [];
   const positions = [
-    { x: 300, y: 250 },
-    { x: 2100, y: 250 },
-    { x: 800, y: 400 },
-    { x: 1600, y: 400 },
-    { x: 300, y: 800 },
-    { x: 2100, y: 800 },
-    { x: 1200, y: 1200 },
-    { x: 1200, y: 600 }
+    { x: 400, y: 350 },
+    { x: 3200, y: 350 },
+    { x: 1200, y: 600 },
+    { x: 2400, y: 600 },
+    { x: 800, y: 1200 },
+    { x: 2800, y: 1200 },
+    { x: 1800, y: 900 },
+    { x: 400, y: 1800 },
+    { x: 3200, y: 1800 },
+    { x: 1800, y: 1600 },
+    { x: 1200, y: 2000 },
+    { x: 2400, y: 2000 }
   ];
   
   for (let i = 0; i < TASK_COUNT; i++) {
@@ -52,27 +56,52 @@ function generateTasks() {
 }
 
 const obstacles = [
-  { x: 500, y: 300, width: 200, height: 40 },
-  { x: 1700, y: 300, width: 200, height: 40 },
-  { x: 500, y: 700, width: 200, height: 40 },
-  { x: 1700, y: 700, width: 200, height: 40 },
-  { x: 1100, y: 500, width: 200, height: 40 },
-  { x: 400, y: 1100, width: 150, height: 40 },
-  { x: 1850, y: 1100, width: 150, height: 40 },
-  { x: 1100, y: 1300, width: 200, height: 40 }
+  // 上部エリア
+  { x: 700, y: 450, width: 250, height: 40 },
+  { x: 2650, y: 450, width: 250, height: 40 },
+  { x: 1600, y: 350, width: 400, height: 40 },
+  { x: 500, y: 700, width: 40, height: 200 },
+  { x: 3060, y: 700, width: 40, height: 200 },
+  
+  // 中央エリア
+  { x: 1200, y: 1000, width: 300, height: 40 },
+  { x: 2100, y: 1000, width: 300, height: 40 },
+  { x: 700, y: 1100, width: 40, height: 250 },
+  { x: 2860, y: 1100, width: 40, height: 250 },
+  { x: 1650, y: 1150, width: 300, height: 40 },
+  { x: 1000, y: 1400, width: 200, height: 40 },
+  { x: 2400, y: 1400, width: 200, height: 40 },
+  
+  // 下部エリア
+  { x: 600, y: 1700, width: 250, height: 40 },
+  { x: 2750, y: 1700, width: 250, height: 40 },
+  { x: 1650, y: 1800, width: 300, height: 40 },
+  { x: 800, y: 1950, width: 40, height: 300 },
+  { x: 2760, y: 1950, width: 40, height: 300 },
+  { x: 1400, y: 2100, width: 800, height: 40 },
+  
+  // 追加の障害物（複雑さを増す）
+  { x: 400, y: 1000, width: 150, height: 40 },
+  { x: 3050, y: 1000, width: 150, height: 40 },
+  { x: 1200, y: 500, width: 40, height: 150 },
+  { x: 2360, y: 500, width: 40, height: 150 },
+  { x: 900, y: 1600, width: 200, height: 40 },
+  { x: 2500, y: 1600, width: 200, height: 40 },
+  { x: 1800, y: 1300, width: 40, height: 200 },
+  { x: 1800, y: 600, width: 40, height: 200 }
 ];
 
 function getStudentSpawn() {
   return {
-    x: Math.random() * 400 + 200,
-    y: Math.random() * 400 + 1000
+    x: Math.random() * 600 + 300,
+    y: Math.random() * 600 + 1500
   };
 }
 
 function getTeacherSpawn() {
   return {
-    x: Math.random() * 400 + 1800,
-    y: Math.random() * 400 + 200
+    x: Math.random() * 600 + 2700,
+    y: Math.random() * 600 + 300
   };
 }
 
@@ -149,7 +178,6 @@ io.on('connection', (socket) => {
       return;
     }
     
-    // 先生が選ばれていない場合は最初のプレイヤーを先生に
     if (!gameState.teacherId && gameState.players.size > 0) {
       const firstPlayer = Array.from(gameState.players.values())[0];
       firstPlayer.isTeacher = true;
@@ -157,7 +185,6 @@ io.on('connection', (socket) => {
       console.log('Auto-assigned teacher:', firstPlayer.id);
     }
 
-    // スポーン地点を設定
     gameState.players.forEach(player => {
       if (player.isTeacher) {
         const spawn = getTeacherSpawn();
@@ -184,7 +211,6 @@ io.on('connection', (socket) => {
       tasks: gameState.tasks
     });
 
-    // カウントダウン
     const countdownInterval = setInterval(() => {
       gameState.countdown--;
       console.log('Countdown:', gameState.countdown);
@@ -279,7 +305,6 @@ function checkAllEscaped() {
   }
 }
 
-// ゲームループ
 setInterval(() => {
   if (gameState.players.size === 0 || !gameState.gameStarted || gameState.countdown > 0) return;
 
@@ -336,7 +361,7 @@ setInterval(() => {
 
   if (gameState.exitOpen) {
     const exitX = CANVAS_WIDTH / 2;
-    const exitY = 150;
+    const exitY = 200;
     
     gameState.players.forEach(player => {
       if (player.isTeacher || player.isCaptured) return;
