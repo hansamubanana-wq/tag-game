@@ -14,7 +14,7 @@
 
     body {
       font-family: 'Arial', sans-serif;
-      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+      background: #000;
       overflow: hidden;
       color: #fff;
     }
@@ -87,69 +87,75 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0a 100%);
     }
 
     #gameCanvas {
-      border: 2px solid #00ffff;
-      box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
-      max-width: 100%;
-      max-height: 100%;
+      border: 3px solid #00ffff;
+      box-shadow: 0 0 50px rgba(0, 255, 255, 0.5), inset 0 0 50px rgba(0, 255, 255, 0.1);
+      background: #0f0f1e;
     }
 
     #hud {
       position: fixed;
-      top: 20px;
-      left: 20px;
-      right: 20px;
-      display: flex;
-      justify-content: space-between;
-      pointer-events: none;
-      z-index: 100;
-    }
-
-    .hud-panel {
-      background: rgba(0, 0, 0, 0.7);
-      padding: 15px 25px;
-      border-radius: 10px;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      padding: 10px 20px;
+      border-radius: 20px;
       border: 2px solid #00ffff;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+      box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      z-index: 100;
+      pointer-events: none;
     }
 
-    .hud-panel h3 {
-      font-size: 0.9em;
+    .hud-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .hud-item span:first-child {
+      font-size: 0.7em;
       color: #00ffff;
-      margin-bottom: 5px;
+      opacity: 0.8;
     }
 
-    .hud-panel p {
-      font-size: 1.5em;
+    .hud-item span:last-child {
+      font-size: 1.1em;
       font-weight: bold;
-      text-shadow: 0 0 10px #00ffff;
+      text-shadow: 0 0 8px #00ffff;
     }
 
     #joystickArea {
       position: fixed;
-      bottom: 50px;
-      right: 50px;
-      width: 150px;
-      height: 150px;
-      background: radial-gradient(circle, rgba(0, 255, 255, 0.2) 0%, transparent 70%);
+      bottom: 30px;
+      left: 30px;
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(circle, rgba(0, 255, 255, 0.15) 0%, transparent 70%);
       border-radius: 50%;
-      border: 2px solid rgba(0, 255, 255, 0.5);
+      border: 3px solid rgba(0, 255, 255, 0.4);
       display: none;
       z-index: 50;
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
     }
 
     #joystick {
       position: absolute;
-      width: 60px;
-      height: 60px;
+      width: 55px;
+      height: 55px;
       background: radial-gradient(circle, #00ffff 0%, #0080ff 100%);
       border-radius: 50%;
-      box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
+      box-shadow: 0 0 25px rgba(0, 255, 255, 0.8);
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      transition: all 0.05s ease-out;
     }
 
     @media (max-width: 768px) {
@@ -158,62 +164,94 @@
       }
 
       #hud {
-        flex-direction: column;
-        gap: 10px;
+        padding: 8px 15px;
+        gap: 15px;
       }
 
-      .hud-panel {
-        padding: 10px 15px;
+      .hud-item span:first-child {
+        font-size: 0.65em;
       }
 
-      .hud-panel p {
-        font-size: 1.2em;
+      .hud-item span:last-child {
+        font-size: 1em;
       }
     }
 
     #playerList {
       position: fixed;
-      top: 20px;
-      right: 20px;
-      background: rgba(0, 0, 0, 0.8);
-      padding: 15px;
-      border-radius: 10px;
+      top: 80px;
+      right: 15px;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 12px;
+      border-radius: 12px;
       border: 2px solid #00ffff;
-      min-width: 200px;
-      max-height: 300px;
+      min-width: 180px;
+      max-height: 250px;
       overflow-y: auto;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+      box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
+      z-index: 100;
     }
 
     #playerList h3 {
       color: #00ffff;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       text-align: center;
+      font-size: 0.95em;
+      text-shadow: 0 0 10px #00ffff;
     }
 
     .player-item {
-      padding: 8px;
-      margin: 5px 0;
-      background: rgba(0, 255, 255, 0.1);
-      border-radius: 5px;
-      font-size: 0.9em;
+      padding: 6px 8px;
+      margin: 4px 0;
+      background: rgba(0, 255, 255, 0.08);
+      border-radius: 6px;
+      font-size: 0.85em;
+      transition: all 0.2s;
     }
 
     .player-item.is-it {
-      background: rgba(255, 0, 0, 0.3);
+      background: rgba(255, 0, 0, 0.25);
       border: 1px solid #ff0000;
       box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+      animation: glow-red 1.5s ease-in-out infinite;
+    }
+
+    @keyframes glow-red {
+      0%, 100% { box-shadow: 0 0 15px rgba(255, 0, 0, 0.5); }
+      50% { box-shadow: 0 0 25px rgba(255, 0, 0, 0.8); }
     }
 
     @media (max-width: 768px) {
       #playerList {
-        top: auto;
-        bottom: 220px;
+        top: 70px;
         right: 10px;
-        max-height: 200px;
+        max-height: 180px;
         min-width: 150px;
         padding: 10px;
       }
+
+      .player-item {
+        font-size: 0.8em;
+      }
+    }
+
+    /* スクロールバーのスタイル */
+    #playerList::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #playerList::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 3px;
+    }
+
+    #playerList::-webkit-scrollbar-thumb {
+      background: rgba(0, 255, 255, 0.5);
+      border-radius: 3px;
+    }
+
+    #playerList::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 255, 255, 0.7);
     }
   </style>
 </head>
@@ -225,25 +263,25 @@
   </div>
 
   <div id="gameContainer" style="display: none;">
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <canvas id="gameCanvas"></canvas>
     
     <div id="hud">
-      <div class="hud-panel">
-        <h3>あなたの状態</h3>
-        <p id="statusText">逃走中</p>
+      <div class="hud-item">
+        <span>状態</span>
+        <span id="statusText">逃走中</span>
       </div>
-      <div class="hud-panel">
-        <h3>時間</h3>
-        <p id="timeText">0.0秒</p>
+      <div class="hud-item">
+        <span>時間</span>
+        <span id="timeText">0.0秒</span>
       </div>
-      <div class="hud-panel">
-        <h3>スコア</h3>
-        <p id="scoreText">0点</p>
+      <div class="hud-item">
+        <span>スコア</span>
+        <span id="scoreText">0点</span>
       </div>
     </div>
 
     <div id="playerList">
-      <h3>プレイヤー</h3>
+      <h3>🏆 プレイヤー</h3>
       <div id="playerListContent"></div>
     </div>
 
@@ -258,35 +296,55 @@
     const ctx = canvas.getContext('2d');
     const socket = io();
 
+    // キャンバスサイズを画面に合わせて設定
+    function resizeCanvas() {
+      const maxWidth = Math.min(window.innerWidth - 20, 1200);
+      const maxHeight = Math.min(window.innerHeight - 20, 800);
+      canvas.width = maxWidth;
+      canvas.height = maxHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
     let myId = null;
     let players = [];
     let keys = {};
     let joystickActive = false;
     let joystickDir = { x: 0, y: 0 };
 
+    // 障害物
+    const obstacles = [
+      { x: 200, y: 150, width: 100, height: 20, color: '#ff00ff' },
+      { x: 500, y: 200, width: 20, height: 150, color: '#ffff00' },
+      { x: 300, y: 400, width: 150, height: 20, color: '#00ff00' },
+      { x: 700, y: 300, width: 20, height: 100, color: '#ff8800' },
+      { x: 150, y: 500, width: 120, height: 20, color: '#ff0088' },
+      { x: 600, y: 100, width: 80, height: 20, color: '#8800ff' },
+    ];
+
     // パーティクルシステム
     class Particle {
       constructor(x, y, color) {
         this.x = x;
         this.y = y;
-        this.vx = (Math.random() - 0.5) * 3;
-        this.vy = (Math.random() - 0.5) * 3;
+        this.vx = (Math.random() - 0.5) * 4;
+        this.vy = (Math.random() - 0.5) * 4;
         this.life = 1;
         this.color = color;
-        this.size = Math.random() * 3 + 2;
+        this.size = Math.random() * 4 + 2;
       }
 
       update() {
         this.x += this.vx;
         this.y += this.vy;
-        this.life -= 0.02;
-        this.vy += 0.1;
+        this.life -= 0.015;
+        this.vy += 0.08;
       }
 
       draw(ctx) {
         ctx.save();
         ctx.globalAlpha = this.life;
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 20;
         ctx.shadowColor = this.color;
         ctx.fillStyle = this.color;
         ctx.beginPath();
@@ -383,7 +441,7 @@
     function handleJoystickEnd(e) {
       e.preventDefault();
       joystickActive = false;
-      joystick.style.transform = 'translate(0, 0)';
+      joystick.style.transform = 'translate(-50%, -50%)';
       joystickDir = { x: 0, y: 0 };
       socket.emit('move', joystickDir);
     }
@@ -407,10 +465,9 @@
     });
 
     socket.on('tag', (data) => {
-      // タグエフェクト
       const newIt = players.find(p => p.id === data.newIt);
       if (newIt) {
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 50; i++) {
           particles.push(new Particle(newIt.x, newIt.y, '#ff0000'));
         }
       }
@@ -421,26 +478,60 @@
     });
 
     // 描画ループ
+    let time = 0;
     function draw() {
-      // 背景
-      ctx.fillStyle = '#0a0a0a';
+      time += 0.01;
+
+      // 背景グラデーション（アニメーション）
+      const gradient = ctx.createRadialGradient(
+        canvas.width / 2 + Math.sin(time) * 100,
+        canvas.height / 2 + Math.cos(time) * 100,
+        0,
+        canvas.width / 2,
+        canvas.height / 2,
+        Math.max(canvas.width, canvas.height)
+      );
+      gradient.addColorStop(0, '#1a1a3e');
+      gradient.addColorStop(0.5, '#0f0f1e');
+      gradient.addColorStop(1, '#050510');
+      ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // グリッド
-      ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
+      ctx.strokeStyle = 'rgba(0, 255, 255, 0.08)';
       ctx.lineWidth = 1;
-      for (let i = 0; i < canvas.width; i += 40) {
+      const gridSize = 50;
+      for (let i = 0; i < canvas.width; i += gridSize) {
         ctx.beginPath();
         ctx.moveTo(i, 0);
         ctx.lineTo(i, canvas.height);
         ctx.stroke();
       }
-      for (let i = 0; i < canvas.height; i += 40) {
+      for (let i = 0; i < canvas.height; i += gridSize) {
         ctx.beginPath();
         ctx.moveTo(0, i);
         ctx.lineTo(canvas.width, i);
         ctx.stroke();
       }
+
+      // 障害物
+      obstacles.forEach(obs => {
+        ctx.save();
+        ctx.shadowBlur = 25;
+        ctx.shadowColor = obs.color;
+        
+        const gradient = ctx.createLinearGradient(obs.x, obs.y, obs.x + obs.width, obs.y + obs.height);
+        gradient.addColorStop(0, obs.color);
+        gradient.addColorStop(1, '#000');
+        ctx.fillStyle = gradient;
+        
+        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+        
+        ctx.strokeStyle = obs.color;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(obs.x, obs.y, obs.width, obs.height);
+        ctx.restore();
+      });
 
       // パーティクル
       particles = particles.filter(p => p.life > 0);
@@ -452,51 +543,59 @@
       // プレイヤー
       players.forEach(player => {
         const color = player.isIt ? '#ff0000' : '#00ffff';
-        const glowSize = player.isIt ? 40 : 30;
+        const glowSize = player.isIt ? 45 : 35;
 
         // パーティクル生成（移動中）
-        if ((player.vx !== 0 || player.vy !== 0) && Math.random() > 0.7) {
+        if ((player.vx !== 0 || player.vy !== 0) && Math.random() > 0.6) {
           particles.push(new Particle(player.x, player.y, color));
         }
 
-        // 影
+        // 外側のグロー
         ctx.save();
         ctx.shadowBlur = glowSize;
         ctx.shadowColor = color;
         ctx.fillStyle = color;
+        ctx.globalAlpha = 0.3;
         ctx.beginPath();
-        ctx.arc(player.x, player.y, 20, 0, Math.PI * 2);
+        ctx.arc(player.x, player.y, 25, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
 
         // プレイヤー本体
         const gradient = ctx.createRadialGradient(player.x, player.y, 5, player.x, player.y, 20);
-        gradient.addColorStop(0, color);
-        gradient.addColorStop(1, player.isIt ? '#aa0000' : '#005555');
+        gradient.addColorStop(0, '#ffffff');
+        gradient.addColorStop(0.3, color);
+        gradient.addColorStop(1, player.isIt ? '#880000' : '#004444');
         ctx.fillStyle = gradient;
         ctx.beginPath();
         ctx.arc(player.x, player.y, 20, 0, Math.PI * 2);
         ctx.fill();
 
+        // 縁取り
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = color;
+        ctx.stroke();
+
         // 名前
         ctx.save();
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 12px Arial';
+        ctx.font = 'bold 13px Arial';
         ctx.textAlign = 'center';
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 15;
         ctx.shadowColor = '#000';
-        ctx.fillText(player.name, player.x, player.y - 30);
+        ctx.fillText(player.name, player.x, player.y - 35);
         ctx.restore();
 
         // 鬼マーク
         if (player.isIt) {
           ctx.save();
-          ctx.fillStyle = '#ff0000';
-          ctx.font = 'bold 20px Arial';
+          ctx.font = 'bold 24px Arial';
           ctx.textAlign = 'center';
-          ctx.shadowBlur = 15;
+          ctx.shadowBlur = 20;
           ctx.shadowColor = '#ff0000';
-          ctx.fillText('👹', player.x, player.y + 40);
+          ctx.fillText('👹', player.x, player.y + 45);
           ctx.restore();
         }
       });
@@ -504,7 +603,7 @@
       // HUD更新
       const me = players.find(p => p.id === myId);
       if (me) {
-        document.getElementById('statusText').textContent = me.isIt ? '👹 鬼' : '🏃 逃走中';
+        document.getElementById('statusText').textContent = me.isIt ? '👹 鬼' : '🏃 逃走';
         document.getElementById('statusText').style.color = me.isIt ? '#ff0000' : '#00ffff';
         document.getElementById('timeText').textContent = me.survivalTime.toFixed(1) + '秒';
         document.getElementById('scoreText').textContent = me.score + '点';
