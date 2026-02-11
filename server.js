@@ -5,34 +5,39 @@ const io = require('socket.io')(http);
 
 app.use(express.static('public'));
 
-const CANVAS_WIDTH = 1200;
-const CANVAS_HEIGHT = 800;
-const PLAYER_SIZE = 25;
-const TEACHER_SPEED = 6;
-const STUDENT_SPEED = 4.5;
-const TASK_COUNT = 5;
-const CAPTURE_DISTANCE = 40;
-const TASK_DISTANCE = 70;
-const EXIT_DISTANCE = 100;
+const CANVAS_WIDTH = 2400;
+const CANVAS_HEIGHT = 1600;
+const PLAYER_SIZE = 30;
+const TEACHER_SPEED = 6.5;
+const STUDENT_SPEED = 5;
+const TASK_COUNT = 8;
+const CAPTURE_DISTANCE = 50;
+const TASK_DISTANCE = 80;
+const EXIT_DISTANCE = 120;
 
 let gameState = {
   players: new Map(),
   tasks: [],
   teacherId: null,
   gameStarted: false,
+  countdown: 0,
   tasksCompleted: 0,
-  exitOpen: false
+  exitOpen: false,
+  lobbyHost: null
 };
 
 // タスク生成
 function generateTasks() {
   const tasks = [];
   const positions = [
-    { x: 200, y: 150 },
-    { x: 1000, y: 150 },
-    { x: 600, y: 400 },
-    { x: 200, y: 650 },
-    { x: 1000, y: 650 }
+    { x: 300, y: 250 },
+    { x: 2100, y: 250 },
+    { x: 800, y: 400 },
+    { x: 1600, y: 400 },
+    { x: 300, y: 800 },
+    { x: 2100, y: 800 },
+    { x: 1200, y: 1200 },
+    { x: 1200, y: 600 }
   ];
   
   for (let i = 0; i < TASK_COUNT; i++) {
@@ -49,82 +54,201 @@ function generateTasks() {
 
 // 障害物
 const obstacles = [
-  { x: 350, y: 200, width: 150, height: 30 },
-  { x: 700, y: 200, width: 150, height: 30 },
-  { x: 350, y: 500, width: 150, height: 30 },
-  { x: 700, y: 500, width: 150, height: 30 },
-  { x: 550, y: 350, width: 100, height: 30 }
+  { x: 500, y: 300, width: 200, height: 40 },
+  { x: 1700, y: 300, width: 200, height: 40 },
+  { x: 500, y: 700, width: 200, height: 40 },
+  { x: 1700, y: 700, width: 200, height: 40 },
+  { x: 1100, y: 500, width: 200, height: 40 },
+  { x: 400, y: 1100, width: 150, height: 40 },
+  { x: 1850, y: 1100, width: 150, height: 40 },
+  { x: 1100, y: 1300, width: 200, height: 40 }
 ];
+
+function getStudentSpawn() {
+  // 生徒は左下エリアにスポーン
+  return {
+    x: Math.random() * 400 + 200,
+    y: Math.random() * 400 + 1000
+  };
+}
+
+function getTeacherSpawn() {
+  // 先生は右上エリアにスポーン
+  return {
+    x: Math.random() * 400 + 1800,
+    y: Math.random() * 400 + 200
+  };
+}
 
 io.on('connection', (socket) => {
   console.log('Player connected:', socket.id);
 
   socket.on('join', (name) => {
+    const spawn = getStudentSpawn();
     const player = {
       id: socket.id,
       name: name || 'Student',
-      x: Math.random() * 400 + 400,
-      y: Math.random() * 200 + 300,
+      x: spawn.x,
+      y: spawn.y,
       vx: 0,
       vy: 0,
       isTeacher: false,
       isCaptured: false,
-      score: 0
+      score: 0,
+      isReady: false
     };
 
-    // 最初のプレイヤーを先生に
+    // 最初のプレイヤーをホストに
     if (gameState.players.size === 0) {
-      player.isTeacher = true;
-      player.name = '加藤先生';
-      gameState.teacherId = socket.id;
+      gameState.lobbyHost = socket.id;
     }
 
     gameState.players.set(socket.id, player);
-
-    // ゲーム開始（2人以上）
-    if (gameState.players.size >= 2 && !gameState.gameStarted) {
-      gameState.gameStarted = true;
-      gameState.tasks = generateTasks();
-      gameState.tasksCompleted = 0;
-      gameState.exitOpen = false;
-    }
 
     socket.emit('init', {
       id: socket.id,
       players: Array.from(gameState.players.values()),
       tasks: gameState.tasks,
       obstacles: obstacles,
-      exitOpen: gameState.exitOpen
+      exitOpen: gameState.exitOpen,
+      gameStarted: gameState.gameStarted,
+      isHost: socket.id === gameState.lobbyHost
     });
 
-    socket.broadcast.emit('playerJoined', player);
+    io.emit('lobbyUpdate', {
+      players: Array.from(gameState.players.values()),
+      hostId: gameState.lobbyHost
+    });
+  });
+
+  socket.on('setTeacher', (playerId) => {
+    if (socket.id !== gameState.lobbyHost) return;
+    
+    // 全員の先生フラグをリセット
+    gameState.players.forEach(p => {
+      p.isTeacher = false;
+    });
+
+    // 指定されたプレイヤーを先生に
+    const teacher = gameState.players.get(playerId);
+    if (teacher) {
+      teacher.isTeacher = true;
+      teacher.name = '加藤先生';
+      gameState.teacherId = playerId;
+    }
+
+    io.emit('lobbyUpdate', {
+      players: Array.from(gameState.players.values()),
+      hostId: gameState.lobbyHost
+    });
+  });
+
+  socket.on('startGame', () => {
+    if (socket.id !== gameState.lobbyHost || gameState.gameStarted) return;
+    
+    // 先生が選ばれていない場合は最初のプレイヤーを先生に
+    if (!gameState.teacherId && gameState.players.size > 0) {
+      const firstPlayer = Array.from(gameState.players.values())[0];
+      firstPlayer.isTeacher = true;
+      firstPlayer.name = '加藤先生';
+      gameState.teacherId = firstPlayer.id;
+    }
+
+    // スポーン地点を設定
+    gameState.players.forEach(player => {
+      if (player.isTeacher) {
+        const spawn = getTeacherSpawn();
+        player.x = spawn.x;
+        player.y = spawn.y;
+      } else {
+        const spawn = getStudentSpawn();
+        player.x = spawn.x;
+        player.y = spawn.y;
+      }
+      player.isCaptured = false;
+      player.score = 0;
+    });
+
+    gameState.gameStarted = true;
+    gameState.tasks = generateTasks();
+    gameState.tasksCompleted = 0;
+    gameState.exitOpen = false;
+    gameState.countdown = 3;
+
+    io.emit('gameStart', {
+      players: Array.from(gameState.players.values()),
+      tasks: gameState.tasks
+    });
+
+    // カウントダウン
+    const countdownInterval = setInterval(() => {
+      gameState.countdown--;
+      io.emit('countdown', gameState.countdown);
+      
+      if (gameState.countdown <= 0) {
+        clearInterval(countdownInterval);
+      }
+    }, 1000);
   });
 
   socket.on('move', (direction) => {
     const player = gameState.players.get(socket.id);
-    if (!player || player.isCaptured) return;
+    if (!player || player.isCaptured || !gameState.gameStarted || gameState.countdown > 0) return;
 
     const speed = player.isTeacher ? TEACHER_SPEED : STUDENT_SPEED;
     player.vx = direction.x * speed;
     player.vy = direction.y * speed;
   });
 
+  socket.on('restartGame', () => {
+    if (socket.id !== gameState.lobbyHost) return;
+
+    gameState.gameStarted = false;
+    gameState.countdown = 0;
+    gameState.tasksCompleted = 0;
+    gameState.exitOpen = false;
+    gameState.teacherId = null;
+
+    gameState.players.forEach(player => {
+      player.isTeacher = false;
+      player.isCaptured = false;
+      player.score = 0;
+      player.name = player.name.replace('加藤先生', 'Player');
+      const spawn = getStudentSpawn();
+      player.x = spawn.x;
+      player.y = spawn.y;
+    });
+
+    io.emit('backToLobby', {
+      players: Array.from(gameState.players.values()),
+      hostId: gameState.lobbyHost
+    });
+  });
+
   socket.on('disconnect', () => {
     const player = gameState.players.get(socket.id);
-    
-    if (player && player.isTeacher && gameState.players.size > 1) {
-      gameState.players.delete(socket.id);
-      // 新しい先生を選出
+    gameState.players.delete(socket.id);
+
+    // ホストが切断したら次のプレイヤーをホストに
+    if (socket.id === gameState.lobbyHost && gameState.players.size > 0) {
+      gameState.lobbyHost = Array.from(gameState.players.keys())[0];
+    }
+
+    // 先生が切断したら次のプレイヤーを先生に
+    if (player && player.isTeacher && gameState.players.size > 0 && gameState.gameStarted) {
       const newTeacher = Array.from(gameState.players.values())[0];
       newTeacher.isTeacher = true;
       newTeacher.name = '加藤先生';
       gameState.teacherId = newTeacher.id;
       io.emit('newTeacher', newTeacher.id);
-    } else {
-      gameState.players.delete(socket.id);
     }
 
     io.emit('playerLeft', socket.id);
+    io.emit('lobbyUpdate', {
+      players: Array.from(gameState.players.values()),
+      hostId: gameState.lobbyHost
+    });
+    
     console.log('Player disconnected:', socket.id);
   });
 });
@@ -132,17 +256,34 @@ io.on('connection', (socket) => {
 function checkGameEnd() {
   const alivePlayers = Array.from(gameState.players.values()).filter(p => !p.isTeacher && !p.isCaptured);
   if (alivePlayers.length === 0) {
-    io.emit('gameEnd', { winner: 'teacher' });
+    io.emit('gameEnd', { 
+      winner: 'teacher',
+      players: Array.from(gameState.players.values())
+    });
+    gameState.gameStarted = false;
+  }
+}
+
+function checkAllEscaped() {
+  const totalStudents = Array.from(gameState.players.values()).filter(p => !p.isTeacher).length;
+  const escapedStudents = Array.from(gameState.players.values()).filter(p => !p.isTeacher && p.isCaptured).length;
+  
+  if (totalStudents > 0 && escapedStudents === totalStudents) {
+    io.emit('gameEnd', { 
+      winner: 'students',
+      players: Array.from(gameState.players.values())
+    });
+    gameState.gameStarted = false;
   }
 }
 
 // ゲームループ
 setInterval(() => {
-  if (gameState.players.size === 0 || !gameState.gameStarted) return;
+  if (gameState.players.size === 0 || !gameState.gameStarted || gameState.countdown > 0) return;
 
   // プレイヤー位置更新
   gameState.players.forEach(player => {
-    if (player.isCaptured) return;
+    if (player.isCaptured && !player.isTeacher) return;
 
     player.x += player.vx;
     player.y += player.vy;
@@ -163,7 +304,7 @@ setInterval(() => {
     });
   });
 
-  // タスク自動進行（近くで立ち止まっている生徒）
+  // タスク自動進行
   gameState.players.forEach(player => {
     if (player.isTeacher || player.isCaptured) return;
     
@@ -186,7 +327,6 @@ setInterval(() => {
           
           io.emit('taskCompleted', { taskId: task.id, playerId: player.id });
           
-          // 全タスク完了で出口オープン
           if (gameState.tasksCompleted >= TASK_COUNT) {
             gameState.exitOpen = true;
             io.emit('exitOpen');
@@ -199,7 +339,7 @@ setInterval(() => {
   // 出口での脱出判定
   if (gameState.exitOpen) {
     const exitX = CANVAS_WIDTH / 2;
-    const exitY = 80;
+    const exitY = 150;
     
     gameState.players.forEach(player => {
       if (player.isTeacher || player.isCaptured) return;
@@ -212,7 +352,7 @@ setInterval(() => {
         player.score += 500;
         player.isCaptured = true;
         io.emit('playerEscaped', { playerId: player.id, name: player.name });
-        checkGameEnd();
+        checkAllEscaped();
       }
     });
   }

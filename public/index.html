@@ -19,7 +19,7 @@
       color: #fff;
     }
 
-    #loginScreen {
+    #loginScreen, #lobbyScreen {
       position: fixed;
       top: 0;
       left: 0;
@@ -33,21 +33,15 @@
       z-index: 1000;
     }
 
-    #loginScreen.hidden {
+    #loginScreen.hidden, #lobbyScreen.hidden {
       display: none;
     }
 
-    #loginScreen h1 {
+    h1 {
       font-size: 2.5em;
       margin-bottom: 10px;
       text-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000;
       animation: pulse 2s ease-in-out infinite;
-    }
-
-    #loginScreen p {
-      font-size: 1.1em;
-      margin-bottom: 20px;
-      color: #ffaa00;
     }
 
     @keyframes pulse {
@@ -55,7 +49,7 @@
       50% { text-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000, 0 0 90px #ff0000; }
     }
 
-    #loginScreen input {
+    input {
       padding: 15px 30px;
       font-size: 1.2em;
       border: 2px solid #ff0000;
@@ -68,9 +62,9 @@
       box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
     }
 
-    #loginScreen button {
-      padding: 15px 50px;
-      font-size: 1.2em;
+    button {
+      padding: 15px 40px;
+      font-size: 1.1em;
       border: none;
       background: linear-gradient(135deg, #ff0000 0%, #aa0000 100%);
       color: #fff;
@@ -79,29 +73,56 @@
       font-weight: bold;
       box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
       transition: all 0.3s;
+      margin: 5px;
     }
 
-    #loginScreen button:hover {
+    button:hover {
       transform: scale(1.05);
       box-shadow: 0 0 40px rgba(255, 0, 0, 0.8);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #lobbyPlayers {
+      background: rgba(0, 0, 0, 0.8);
+      padding: 20px;
+      border-radius: 15px;
+      border: 2px solid #ff0000;
+      margin: 20px 0;
+      min-width: 400px;
+    }
+
+    .lobby-player {
+      padding: 12px;
+      margin: 8px 0;
+      background: rgba(255, 0, 0, 0.1);
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .lobby-player.teacher {
+      background: rgba(255, 0, 0, 0.3);
+      border: 2px solid #ff0000;
     }
 
     #gameContainer {
       position: relative;
       width: 100vw;
       height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      display: none;
+      overflow: hidden;
       background: #0a0a0a;
     }
 
     #gameCanvas {
-      border: 3px solid #ff0000;
-      box-shadow: 0 0 50px rgba(255, 0, 0, 0.5);
-      background: #1a1a1a;
-      max-width: 100%;
-      max-height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
     }
 
     #hud {
@@ -109,7 +130,7 @@
       top: 15px;
       left: 15px;
       background: rgba(0, 0, 0, 0.9);
-      padding: 12px 20px;
+      padding: 15px 25px;
       border-radius: 12px;
       border: 2px solid #ff0000;
       box-shadow: 0 0 25px rgba(255, 0, 0, 0.4);
@@ -117,14 +138,14 @@
     }
 
     #roleText {
-      font-size: 1.3em;
+      font-size: 1.5em;
       font-weight: bold;
       margin-bottom: 8px;
       text-shadow: 0 0 10px #ff0000;
     }
 
     #statsText {
-      font-size: 0.9em;
+      font-size: 1em;
       color: #ffaa00;
     }
 
@@ -133,7 +154,7 @@
       top: 15px;
       right: 15px;
       background: rgba(0, 0, 0, 0.9);
-      padding: 12px 20px;
+      padding: 15px 25px;
       border-radius: 12px;
       border: 2px solid #00ff00;
       box-shadow: 0 0 25px rgba(0, 255, 0, 0.4);
@@ -142,12 +163,12 @@
 
     #taskProgress h3 {
       color: #00ff00;
-      font-size: 0.9em;
+      font-size: 1em;
       margin-bottom: 5px;
     }
 
     #taskProgress p {
-      font-size: 1.2em;
+      font-size: 1.4em;
       font-weight: bold;
     }
 
@@ -156,28 +177,28 @@
       bottom: 15px;
       right: 15px;
       background: rgba(0, 0, 0, 0.9);
-      padding: 10px;
+      padding: 12px;
       border-radius: 10px;
       border: 2px solid #ffaa00;
-      max-height: 200px;
+      max-height: 250px;
       overflow-y: auto;
-      min-width: 180px;
+      min-width: 200px;
       z-index: 100;
     }
 
     #playerList h3 {
       color: #ffaa00;
-      font-size: 0.85em;
-      margin-bottom: 8px;
+      font-size: 1em;
+      margin-bottom: 10px;
       text-align: center;
     }
 
     .player-item {
-      padding: 5px 8px;
-      margin: 3px 0;
+      padding: 8px 10px;
+      margin: 5px 0;
       background: rgba(255, 170, 0, 0.1);
       border-radius: 5px;
-      font-size: 0.8em;
+      font-size: 0.9em;
     }
 
     .player-item.teacher {
@@ -194,8 +215,8 @@
       position: fixed;
       bottom: 30px;
       left: 30px;
-      width: 140px;
-      height: 140px;
+      width: 150px;
+      height: 150px;
       background: radial-gradient(circle, rgba(255, 0, 0, 0.15) 0%, transparent 70%);
       border-radius: 50%;
       border: 3px solid rgba(255, 0, 0, 0.4);
@@ -205,14 +226,34 @@
 
     #joystick {
       position: absolute;
-      width: 55px;
-      height: 55px;
+      width: 60px;
+      height: 60px;
       background: radial-gradient(circle, #ff0000 0%, #aa0000 100%);
       border-radius: 50%;
       box-shadow: 0 0 25px rgba(255, 0, 0, 0.8);
+      left: 50%;
+      top: 50%;
+      margin-left: -30px;
+      margin-top: -30px;
+    }
+
+    #countdown {
+      position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      font-size: 10em;
+      font-weight: bold;
+      text-shadow: 0 0 50px #ff0000, 0 0 100px #ff0000;
+      z-index: 200;
+      display: none;
+      animation: countdownPulse 0.8s ease-out;
+    }
+
+    @keyframes countdownPulse {
+      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+      50% { transform: translate(-50%, -50%) scale(1.2); }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
     }
 
     #notification {
@@ -239,11 +280,16 @@
     #notification p {
       font-size: 1.2em;
       color: #ffaa00;
+      margin-bottom: 20px;
     }
 
     @media (max-width: 768px) {
       #joystickArea {
         display: flex;
+      }
+      
+      #lobbyPlayers {
+        min-width: 300px;
       }
     }
   </style>
@@ -251,13 +297,25 @@
 <body>
   <div id="loginScreen">
     <h1>🏫 加藤先生から逃げろ！</h1>
-    <p>オンライン対戦版</p>
+    <p style="color: #ffaa00; font-size: 1.1em;">オンライン対戦版</p>
     <input type="text" id="nameInput" placeholder="名前を入力" maxlength="12">
     <button id="joinButton">ゲーム参加</button>
   </div>
 
-  <div id="gameContainer" style="display: none;">
-    <canvas id="gameCanvas" width="1200" height="800"></canvas>
+  <div id="lobbyScreen" class="hidden">
+    <h1>🎮 ロビー</h1>
+    <div id="lobbyPlayers">
+      <h3 style="color: #ffaa00; margin-bottom: 15px;">参加プレイヤー</h3>
+      <div id="lobbyPlayerList"></div>
+    </div>
+    <div id="lobbyControls">
+      <button id="startButton" style="display: none;">ゲーム開始</button>
+    </div>
+    <p style="color: #888; font-size: 0.9em; margin-top: 10px;">ホストが鬼を選択してゲームを開始できます</p>
+  </div>
+
+  <div id="gameContainer">
+    <canvas id="gameCanvas"></canvas>
     
     <div id="hud">
       <div id="roleText">生徒</div>
@@ -266,7 +324,7 @@
 
     <div id="taskProgress">
       <h3>📋 タスク進捗</h3>
-      <p id="taskText">0/5</p>
+      <p id="taskText">0/8</p>
     </div>
 
     <div id="playerList">
@@ -278,9 +336,12 @@
       <div id="joystick"></div>
     </div>
 
+    <div id="countdown">3</div>
+
     <div id="notification">
       <h2 id="notifTitle">通知</h2>
       <p id="notifText"></p>
+      <button id="restartButton" style="display: none;">ロビーに戻る</button>
     </div>
   </div>
 
@@ -290,41 +351,60 @@
     const ctx = canvas.getContext('2d');
     const socket = io();
 
+    const WORLD_WIDTH = 2400;
+    const WORLD_HEIGHT = 1600;
+    let viewportWidth = window.innerWidth;
+    let viewportHeight = window.innerHeight;
+
+    canvas.width = viewportWidth;
+    canvas.height = viewportHeight;
+
     let myId = null;
+    let isHost = false;
     let players = [];
     let tasks = [];
     let obstacles = [];
     let exitOpen = false;
+    let gameStarted = false;
     let keys = {};
     let joystickActive = false;
     let joystickDir = { x: 0, y: 0 };
+    let cameraX = 0;
+    let cameraY = 0;
+
+    window.addEventListener('resize', () => {
+      viewportWidth = window.innerWidth;
+      viewportHeight = window.innerHeight;
+      canvas.width = viewportWidth;
+      canvas.height = viewportHeight;
+    });
 
     class Particle {
       constructor(x, y, color) {
         this.x = x;
         this.y = y;
-        this.vx = (Math.random() - 0.5) * 3;
-        this.vy = (Math.random() - 0.5) * 3;
+        this.vx = (Math.random() - 0.5) * 4;
+        this.vy = (Math.random() - 0.5) * 4;
         this.life = 1;
         this.color = color;
-        this.size = Math.random() * 3 + 2;
+        this.size = Math.random() * 4 + 2;
       }
 
       update() {
         this.x += this.vx;
         this.y += this.vy;
-        this.life -= 0.02;
+        this.life -= 0.015;
         this.vy += 0.1;
       }
 
       draw(ctx) {
         ctx.save();
         ctx.globalAlpha = this.life;
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 20;
         ctx.shadowColor = this.color;
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.arc(this.x - cameraX, this.y - cameraY, this.size, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
       }
@@ -337,13 +417,108 @@
       const name = document.getElementById('nameInput').value.trim() || 'Student';
       socket.emit('join', name);
       document.getElementById('loginScreen').classList.add('hidden');
-      document.getElementById('gameContainer').style.display = 'flex';
+      document.getElementById('lobbyScreen').classList.remove('hidden');
     });
 
     document.getElementById('nameInput').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         document.getElementById('joinButton').click();
       }
+    });
+
+    // ロビー
+    socket.on('lobbyUpdate', (data) => {
+      players = data.players;
+      isHost = myId === data.hostId;
+
+      const listDiv = document.getElementById('lobbyPlayerList');
+      listDiv.innerHTML = '';
+      
+      data.players.forEach(player => {
+        const div = document.createElement('div');
+        div.className = 'lobby-player' + (player.isTeacher ? ' teacher' : '');
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = player.isTeacher ? `👨‍🏫 ${player.name}` : `🏃 ${player.name}`;
+        div.appendChild(nameSpan);
+        
+        if (isHost && !player.isTeacher) {
+          const btn = document.createElement('button');
+          btn.textContent = '鬼にする';
+          btn.style.padding = '5px 15px';
+          btn.style.fontSize = '0.9em';
+          btn.onclick = () => socket.emit('setTeacher', player.id);
+          div.appendChild(btn);
+        }
+        
+        listDiv.appendChild(div);
+      });
+
+      document.getElementById('startButton').style.display = isHost && data.players.length >= 2 ? 'block' : 'none';
+    });
+
+    document.getElementById('startButton').addEventListener('click', () => {
+      socket.emit('startGame');
+    });
+
+    document.getElementById('restartButton').addEventListener('click', () => {
+      socket.emit('restartGame');
+    });
+
+    // ゲーム開始
+    socket.on('gameStart', (data) => {
+      document.getElementById('lobbyScreen').classList.add('hidden');
+      document.getElementById('gameContainer').style.display = 'block';
+      players = data.players;
+      tasks = data.tasks;
+      gameStarted = true;
+    });
+
+    socket.on('countdown', (count) => {
+      const countdownDiv = document.getElementById('countdown');
+      if (count > 0) {
+        countdownDiv.textContent = count;
+        countdownDiv.style.display = 'block';
+        setTimeout(() => {
+          countdownDiv.style.display = 'none';
+        }, 800);
+      } else {
+        countdownDiv.textContent = 'GO!';
+        countdownDiv.style.color = '#00ff00';
+        countdownDiv.style.display = 'block';
+        setTimeout(() => {
+          countdownDiv.style.display = 'none';
+          countdownDiv.style.color = '#ff0000';
+        }, 800);
+      }
+    });
+
+    socket.on('backToLobby', (data) => {
+      gameStarted = false;
+      document.getElementById('gameContainer').style.display = 'none';
+      document.getElementById('lobbyScreen').classList.remove('hidden');
+      document.getElementById('notification').style.display = 'none';
+      players = data.players;
+      
+      const listDiv = document.getElementById('lobbyPlayerList');
+      listDiv.innerHTML = '';
+      
+      data.players.forEach(player => {
+        const div = document.createElement('div');
+        div.className = 'lobby-player';
+        div.textContent = `🏃 ${player.name}`;
+        
+        if (isHost) {
+          const btn = document.createElement('button');
+          btn.textContent = '鬼にする';
+          btn.style.padding = '5px 15px';
+          btn.style.fontSize = '0.9em';
+          btn.onclick = () => socket.emit('setTeacher', player.id);
+          div.appendChild(btn);
+        }
+        
+        listDiv.appendChild(div);
+      });
     });
 
     // キーボード操作
@@ -374,7 +549,7 @@
       socket.emit('move', { x, y });
     }
 
-    // ジョイスティック
+    // ジョイスティック（修正版）
     const joystickArea = document.getElementById('joystickArea');
     const joystick = document.getElementById('joystick');
 
@@ -392,21 +567,25 @@
       if (!joystickActive) return;
 
       const rect = joystickArea.getBoundingClientRect();
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
       const touch = e.touches[0];
-      const x = touch.clientX - rect.left - centerX;
-      const y = touch.clientY - rect.top - centerY;
+      const x = touch.clientX - centerX;
+      const y = touch.clientY - centerY;
 
       const distance = Math.sqrt(x * x + y * y);
-      const maxDistance = rect.width / 2 - 30;
+      const maxDistance = rect.width / 2 - 35;
 
       if (distance > 0) {
         let dirX = x / distance;
         let dirY = y / distance;
         
         const clampedDistance = Math.min(distance, maxDistance);
-        joystick.style.transform = `translate(${dirX * clampedDistance}px, ${dirY * clampedDistance}px)`;
+        const offsetX = dirX * clampedDistance;
+        const offsetY = dirY * clampedDistance;
+        
+        joystick.style.marginLeft = offsetX + 'px';
+        joystick.style.marginTop = offsetY + 'px';
 
         joystickDir.x = dirX;
         joystickDir.y = dirY;
@@ -417,7 +596,8 @@
     function handleJoystickEnd(e) {
       e.preventDefault();
       joystickActive = false;
-      joystick.style.transform = 'translate(-50%, -50%)';
+      joystick.style.marginLeft = '-30px';
+      joystick.style.marginTop = '-30px';
       joystickDir = { x: 0, y: 0 };
       socket.emit('move', joystickDir);
     }
@@ -429,10 +609,14 @@
       tasks = data.tasks;
       obstacles = data.obstacles;
       exitOpen = data.exitOpen;
+      gameStarted = data.gameStarted;
+      isHost = data.isHost;
     });
 
     socket.on('playerJoined', (player) => {
-      players.push(player);
+      if (!gameStarted) {
+        players.push(player);
+      }
     });
 
     socket.on('playerLeft', (id) => {
@@ -446,27 +630,29 @@
     });
 
     socket.on('taskCompleted', (data) => {
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < 40; i++) {
         const task = tasks[data.taskId];
         particles.push(new Particle(task.x, task.y, '#00ff00'));
       }
     });
 
     socket.on('playerCaptured', (data) => {
-      showNotification('捕獲！', `${data.studentName}が捕まった！`);
+      showNotification('捕獲！', `${data.studentName}が捕まった！`, false);
     });
 
     socket.on('playerEscaped', (data) => {
-      showNotification('脱出成功！', `${data.name}が脱出した！`);
+      showNotification('脱出成功！', `${data.name}が脱出した！`, false);
     });
 
     socket.on('exitOpen', () => {
-      showNotification('脱出可能！', '全タスク完了！画面上部の出口へ急げ！');
+      showNotification('脱出可能！', '全タスク完了！画面上部の出口へ急げ！', false);
     });
 
     socket.on('gameEnd', (data) => {
       if (data.winner === 'teacher') {
-        showNotification('ゲーム終了', '加藤先生の勝利！');
+        showNotification('ゲーム終了', '加藤先生の勝利！', true);
+      } else {
+        showNotification('ゲーム終了', '生徒の勝利！', true);
       }
     });
 
@@ -474,21 +660,34 @@
       console.log('New teacher:', teacherId);
     });
 
-    function showNotification(title, text) {
+    function showNotification(title, text, showRestart) {
       const notif = document.getElementById('notification');
       document.getElementById('notifTitle').textContent = title;
       document.getElementById('notifText').textContent = text;
+      document.getElementById('restartButton').style.display = (showRestart && isHost) ? 'block' : 'none';
       notif.style.display = 'block';
       
-      setTimeout(() => {
-        notif.style.display = 'none';
-      }, 3000);
+      if (!showRestart) {
+        setTimeout(() => {
+          notif.style.display = 'none';
+        }, 3000);
+      }
     }
 
     // 描画ループ
     let time = 0;
     function draw() {
       time += 0.02;
+
+      // カメラ追従
+      const me = players.find(p => p.id === myId);
+      if (me) {
+        cameraX = me.x - viewportWidth / 2;
+        cameraY = me.y - viewportHeight / 2;
+        
+        cameraX = Math.max(0, Math.min(WORLD_WIDTH - viewportWidth, cameraX));
+        cameraY = Math.max(0, Math.min(WORLD_HEIGHT - viewportHeight, cameraY));
+      }
 
       // 背景
       ctx.fillStyle = '#1a1a1a';
@@ -497,16 +696,20 @@
       // グリッド
       ctx.strokeStyle = 'rgba(255, 0, 0, 0.08)';
       ctx.lineWidth = 1;
-      for (let i = 0; i < canvas.width; i += 60) {
+      const gridSize = 80;
+      const startX = Math.floor(cameraX / gridSize) * gridSize;
+      const startY = Math.floor(cameraY / gridSize) * gridSize;
+      
+      for (let i = startX; i < cameraX + viewportWidth + gridSize; i += gridSize) {
         ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i, canvas.height);
+        ctx.moveTo(i - cameraX, 0);
+        ctx.lineTo(i - cameraX, canvas.height);
         ctx.stroke();
       }
-      for (let i = 0; i < canvas.height; i += 60) {
+      for (let i = startY; i < cameraY + viewportHeight + gridSize; i += gridSize) {
         ctx.beginPath();
-        ctx.moveTo(0, i);
-        ctx.lineTo(canvas.width, i);
+        ctx.moveTo(0, i - cameraY);
+        ctx.lineTo(canvas.width, i - cameraY);
         ctx.stroke();
       }
 
@@ -516,129 +719,108 @@
         ctx.shadowBlur = 20;
         ctx.shadowColor = '#666';
         ctx.fillStyle = '#333';
-        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+        ctx.fillRect(obs.x - cameraX, obs.y - cameraY, obs.width, obs.height);
         ctx.strokeStyle = '#555';
         ctx.lineWidth = 2;
-        ctx.strokeRect(obs.x, obs.y, obs.width, obs.height);
+        ctx.strokeRect(obs.x - cameraX, obs.y - cameraY, obs.width, obs.height);
         ctx.restore();
       });
 
-      // 出口（超目立つアニメーション）
+      // 出口
       if (exitOpen) {
-        const exitX = canvas.width / 2;
-        const exitY = 80;
+        const exitX = WORLD_WIDTH / 2;
+        const exitY = 150;
         
-        // 背景の光
         ctx.save();
-        const glowSize = 150 + Math.sin(time * 3) * 20;
+        const glowSize = 180 + Math.sin(time * 3) * 25;
         ctx.shadowBlur = glowSize;
         ctx.shadowColor = '#00ff00';
         ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
         ctx.beginPath();
-        ctx.arc(exitX, exitY, 80, 0, Math.PI * 2);
+        ctx.arc(exitX - cameraX, exitY - cameraY, 100, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
 
-        // 外側のリング
         ctx.save();
         ctx.strokeStyle = '#00ff00';
-        ctx.lineWidth = 5;
-        ctx.shadowBlur = 40;
+        ctx.lineWidth = 6;
+        ctx.shadowBlur = 45;
         ctx.shadowColor = '#00ff00';
         ctx.beginPath();
-        ctx.arc(exitX, exitY, 90 + Math.sin(time * 5) * 10, 0, Math.PI * 2);
+        ctx.arc(exitX - cameraX, exitY - cameraY, 110 + Math.sin(time * 5) * 12, 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
 
-        // 内側のリング
-        ctx.save();
-        ctx.strokeStyle = '#00ff00';
-        ctx.lineWidth = 3;
-        ctx.shadowBlur = 30;
-        ctx.shadowColor = '#00ff00';
-        ctx.beginPath();
-        ctx.arc(exitX, exitY, 60, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
-
-        // 矢印
         ctx.save();
         ctx.fillStyle = '#00ff00';
-        ctx.font = 'bold 50px Arial';
+        ctx.font = 'bold 60px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.shadowBlur = 50;
         ctx.shadowColor = '#00ff00';
-        ctx.fillText('⬆', exitX, exitY - 10);
+        ctx.fillText('⬆', exitX - cameraX, exitY - cameraY - 15);
         ctx.restore();
 
-        // テキスト
         ctx.save();
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 28px Arial';
+        ctx.font = 'bold 35px Arial';
         ctx.textAlign = 'center';
-        ctx.shadowBlur = 30;
+        ctx.shadowBlur = 35;
         ctx.shadowColor = '#00ff00';
-        ctx.fillText('🚪 出口', exitX, exitY + 50);
+        ctx.fillText('🚪 出口', exitX - cameraX, exitY - cameraY + 65);
         ctx.restore();
 
-        // パーティクル生成
-        if (Math.random() > 0.7) {
-          particles.push(new Particle(exitX + (Math.random() - 0.5) * 100, exitY, '#00ff00'));
+        if (Math.random() > 0.65) {
+          particles.push(new Particle(exitX + (Math.random() - 0.5) * 120, exitY, '#00ff00'));
         }
       }
 
       // タスク
-      const me = players.find(p => p.id === myId);
-      
       tasks.forEach(task => {
         const color = task.completed ? '#00ff00' : '#ffaa00';
+        const screenX = task.x - cameraX;
+        const screenY = task.y - cameraY;
         
         ctx.save();
-        ctx.shadowBlur = 25;
+        ctx.shadowBlur = 30;
         ctx.shadowColor = color;
         
-        // 机
         ctx.fillStyle = '#8B4513';
-        ctx.fillRect(task.x - 30, task.y - 20, 60, 40);
+        ctx.fillRect(screenX - 40, screenY - 25, 80, 50);
         
-        // タスクマーク
         ctx.fillStyle = color;
-        ctx.font = 'bold 25px Arial';
+        ctx.font = 'bold 32px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(task.completed ? '✓' : '📝', task.x, task.y + 5);
+        ctx.fillText(task.completed ? '✓' : '📝', screenX, screenY + 8);
         
-        // プログレスバー
         if (!task.completed && task.progress > 0) {
           ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-          ctx.fillRect(task.x - 35, task.y - 40, 70, 10);
+          ctx.fillRect(screenX - 45, screenY - 50, 90, 12);
           
           ctx.fillStyle = '#00ff00';
-          ctx.fillRect(task.x - 35, task.y - 40, 70 * (task.progress / 100), 10);
+          ctx.fillRect(screenX - 45, screenY - 50, 90 * (task.progress / 100), 12);
           
-          // パーセント表示
           ctx.fillStyle = '#fff';
-          ctx.font = 'bold 10px Arial';
-          ctx.fillText(Math.floor(task.progress) + '%', task.x, task.y - 48);
+          ctx.font = 'bold 12px Arial';
+          ctx.fillText(Math.floor(task.progress) + '%', screenX, screenY - 60);
         }
         
         ctx.restore();
 
-        // 近くにいるか判定
         if (me && !me.isTeacher && !me.isCaptured && !task.completed) {
           const dx = task.x - me.x;
           const dy = task.y - me.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
           const isMoving = Math.abs(me.vx) > 0.1 || Math.abs(me.vy) > 0.1;
           
-          if (distance < 70) {
+          if (distance < 80) {
             ctx.save();
             ctx.fillStyle = '#fff';
-            ctx.font = 'bold 14px Arial';
+            ctx.font = 'bold 18px Arial';
             ctx.textAlign = 'center';
-            ctx.shadowBlur = 10;
+            ctx.shadowBlur = 12;
             ctx.shadowColor = '#000';
-            ctx.fillText(isMoving ? '立ち止まって提出' : '提出中...', task.x, task.y - 55);
+            ctx.fillText(isMoving ? '立ち止まって提出' : '提出中...', screenX, screenY - 70);
             ctx.restore();
           }
         }
@@ -653,57 +835,52 @@
 
       // プレイヤー
       players.forEach(player => {
-        if (player.isCaptured && !player.isTeacher) {
-          return;
-        }
+        if (player.isCaptured && !player.isTeacher) return;
 
+        const screenX = player.x - cameraX;
+        const screenY = player.y - cameraY;
         const color = player.isTeacher ? '#ff0000' : '#00ffff';
-        const size = player.isTeacher ? 30 : 25;
+        const size = player.isTeacher ? 35 : 30;
         
-        // パーティクル
-        if ((player.vx !== 0 || player.vy !== 0) && Math.random() > 0.7) {
+        if ((player.vx !== 0 || player.vy !== 0) && Math.random() > 0.65) {
           particles.push(new Particle(player.x, player.y, color));
         }
 
-        // 影
         ctx.save();
-        ctx.shadowBlur = player.isTeacher ? 50 : 35;
+        ctx.shadowBlur = player.isTeacher ? 55 : 40;
         ctx.shadowColor = color;
         ctx.fillStyle = color;
         ctx.globalAlpha = 0.3;
         ctx.beginPath();
-        ctx.arc(player.x, player.y, size + 5, 0, Math.PI * 2);
+        ctx.arc(screenX, screenY, size + 8, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
 
-        // プレイヤー本体
-        const gradient = ctx.createRadialGradient(player.x, player.y, 5, player.x, player.y, size);
+        const gradient = ctx.createRadialGradient(screenX, screenY, 5, screenX, screenY, size);
         gradient.addColorStop(0, '#ffffff');
         gradient.addColorStop(0.4, color);
         gradient.addColorStop(1, player.isTeacher ? '#880000' : '#004444');
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.arc(player.x, player.y, size, 0, Math.PI * 2);
+        ctx.arc(screenX, screenY, size, 0, Math.PI * 2);
         ctx.fill();
 
-        // 名前
         ctx.save();
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 14px Arial';
+        ctx.font = 'bold 18px Arial';
         ctx.textAlign = 'center';
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 18;
         ctx.shadowColor = '#000';
-        ctx.fillText(player.name, player.x, player.y - 40);
+        ctx.fillText(player.name, screenX, screenY - 50);
         ctx.restore();
 
-        // アイコン
         if (player.isTeacher) {
           ctx.save();
-          ctx.font = 'bold 28px Arial';
+          ctx.font = 'bold 35px Arial';
           ctx.textAlign = 'center';
-          ctx.shadowBlur = 20;
+          ctx.shadowBlur = 25;
           ctx.shadowColor = '#ff0000';
-          ctx.fillText('👨‍🏫', player.x, player.y + 50);
+          ctx.fillText('👨‍🏫', screenX, screenY + 60);
           ctx.restore();
         }
       });
